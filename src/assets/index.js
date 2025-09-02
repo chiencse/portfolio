@@ -39,7 +39,7 @@ import jobit from "./jobit.png";
 import tripguide from "./tripguide.png";
 import hopital from "./hopital.png";
 import ebkstore from "./ebkstore.png";
-
+import cv from "./cv.pdf";
 export {
   logo,
   backend,
@@ -79,4 +79,5 @@ export {
   ebkstore,
   aws,
   springboot,
+  cv,
 };

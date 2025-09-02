@@ -34,7 +34,7 @@ import springboot from "./tech/springboot.png";
 
 import hcmut from "./company/hcmut.png";
 import geekup from "./company/geekup.png";
-
+import avt from "./myavt.jpg";
 import jobit from "./jobit.png";
 import tripguide from "./tripguide.png";
 import hopital from "./hopital.png";
@@ -80,4 +80,5 @@ export {
   aws,
   springboot,
   cv,
+  avt,
 };

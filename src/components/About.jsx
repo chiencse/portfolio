@@ -17,6 +17,7 @@ import {
   faJsSquare,
   faReact,
 } from "@fortawesome/free-brands-svg-icons";
+import { avt } from "../assets";
 
 const ServiceCard = ({ index, title, icon }) => (
   <Tilt className="xs:w-[250px] w-full">
@@ -68,7 +69,7 @@ const About = () => {
       <div className="mt-10 bg-tertiary p-6 rounded-lg shadow-md text-white flex items-center gap-10">
         {/* Avatar Image */}
         <img
-          src="src/assets/myavt.jpg" // Replace with your image path
+          src={avt}
           alt="Avatar"
           className="w-36 h-36 rounded-full object-cover"
         />

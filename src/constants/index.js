@@ -31,6 +31,8 @@ import {
   nextjs,
   azurecloud,
   ebkstore,
+  aws,
+  springboot,
 } from "../assets";
 
 export const navLinks = [
@@ -136,6 +138,14 @@ const technologies = [
     name: "azure cloud",
     icon: azurecloud,
   },
+  {
+    name: "Aws",
+    icon: aws,
+  },
+  {
+    name: "Spring Boot",
+    icon: springboot,
+  },
 ];
 
 const experiences = [
@@ -157,8 +167,16 @@ const experiences = [
     company_name: "Geek Up Company",
     icon: geekup,
     iconBg: "#E6DEDD",
-    date: "Jan 2024 - Jun 2024",
-    points: [""],
+    date: "Jan 2025 - Jun 2025",
+    points: [
+      "Objective: To support the development of OGeek 2.0, an internal product for employee connection management, focusing on backend architecture, competency management, and process optimization.",
+      "Technologies: NestJS | PostgreSQL | Docker | Redis | AWS S3 | Prometheus | Grafana",
+      "Analyzed business and operational requirements, mapped current workflows, and proposed updated workflows aligned with stakeholder needs.",
+      "Designed and documented system architecture using C4 Model and applied modern practices such as Clean Architecture, Domain-Driven Design, and Hexagonal Architecture.",
+      "Developed and integrated RESTful APIs with PostgreSQL and Redis, ensuring data consistency, scalability, and performance optimization.",
+      "Deployed and monitored backend services using Docker, Prometheus, and Grafana; set up data backup strategies for reliability.",
+      "Collaborated closely with product design, frontend, and ops teams in Agile squads, participating in backlog planning, reviews, retrospectives, and delivering iteration milestones.",
+    ],
   },
 ];
 
@@ -190,6 +208,31 @@ const testimonials = [
 ];
 
 const projects = [
+  {
+    name: "CS_Compiler",
+    description:
+      "A custom programming language and compiler project that covers the full pipeline: from lexical and syntax analysis to semantic checking, intermediate representation, and code generation. The project demonstrates expertise in compiler design, programming language theory, and low-level code generation.",
+    tags: [
+      {
+        name: "antlr",
+        color: "blue-text-gradient",
+      },
+      {
+        name: "python",
+        color: "green-text-gradient",
+      },
+      {
+        name: "jasmin",
+        color: "orange-text-gradient",
+      },
+      {
+        name: "compiler-design",
+        color: "pink-text-gradient",
+      },
+    ],
+    image: jobit, // Replace this with the actual image variable or path
+    source_code_link: "https://github.com/chiencse/CS_Compiler.git",
+  },
   {
     name: "Hospital Management System",
     description:
@@ -244,28 +287,6 @@ const projects = [
     ],
     image: ebkstore, // Replace with the actual image variable or path
     source_code_link: "https://github.com/chiencse/electronics_store", // Replace with the actual source code link
-  },
-
-  {
-    name: "Trip Guide",
-    description:
-      "A comprehensive travel booking platform that allows users to book flights, hotels, and rental cars, and offers curated recommendations for popular destinations.",
-    tags: [
-      {
-        name: "nextjs",
-        color: "blue-text-gradient",
-      },
-      {
-        name: "supabase",
-        color: "green-text-gradient",
-      },
-      {
-        name: "css",
-        color: "pink-text-gradient",
-      },
-    ],
-    image: tripguide,
-    source_code_link: "https://github.com/",
   },
 ];
 

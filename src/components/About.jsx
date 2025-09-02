@@ -80,7 +80,7 @@ const About = () => {
             <strong>Name:</strong> Nong Minh Chien <br />
             <strong>University:</strong> Ho Chi Minh University Of Technology
             (HCMUT) <br />
-            <strong>GPA:</strong> 3.4/4.0 <br />
+            <strong>GPA:</strong> 3.5/4.0 <br />
             <strong>Phone Number:</strong> +84 388 506 847 <br />
             <strong>GitHub:</strong>{" "}
             <a

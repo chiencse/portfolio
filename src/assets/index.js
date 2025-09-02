@@ -29,6 +29,8 @@ import nest from "./tech/nest.png";
 import django from "./tech/django.png";
 import nextjs from "./tech/nextjs.svg";
 import azurecloud from "./tech/azurecloud.png";
+import aws from "./tech/Amazon_Web_Services_Logo.svg.png";
+import springboot from "./tech/springboot.png";
 
 import hcmut from "./company/hcmut.png";
 import geekup from "./company/geekup.png";
@@ -75,4 +77,6 @@ export {
   azurecloud,
   hopital,
   ebkstore,
+  aws,
+  springboot,
 };

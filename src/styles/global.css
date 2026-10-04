@@ -4,29 +4,45 @@
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
 /* ---------- Design tokens ---------- */
+@property --angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
 :root {
-  --bg: #f6f5f1;
+  --bg: #f5f4f0;
   --surface: #ffffff;
   --surface-2: #efede7;
   --ink: #15171c;
   --muted: #5d6371;
   --line: #e2dfd7;
   --accent: #0d7f57;
+  --accent-2: #7c3aed;
+  --accent-3: #0891b2;
   --accent-ink: #ffffff;
   --accent-soft: color-mix(in oklab, var(--accent) 12%, transparent);
+  --grid: rgb(21 23 28 / 0.05);
+  --aurora-opacity: 0.16;
+  --glass: color-mix(in oklab, var(--surface) 72%, transparent);
   color-scheme: light;
 }
 
 [data-theme='dark'] {
-  --bg: #0b0d11;
-  --surface: #12151b;
-  --surface-2: #181c23;
-  --ink: #e7e9ee;
-  --muted: #959cab;
-  --line: #242932;
+  --bg: #07090d;
+  --surface: #10131a;
+  --surface-2: #171b24;
+  --ink: #e9ebf0;
+  --muted: #979eae;
+  --line: #222733;
   --accent: #42d99a;
+  --accent-2: #a78bfa;
+  --accent-3: #38bdf8;
   --accent-ink: #06150e;
-  --accent-soft: color-mix(in oklab, var(--accent) 14%, transparent);
+  --accent-soft: color-mix(in oklab, var(--accent) 16%, transparent);
+  --grid: rgb(255 255 255 / 0.035);
+  --aurora-opacity: 0.2;
+  --glass: color-mix(in oklab, var(--surface) 62%, transparent);
   color-scheme: dark;
 }
 
@@ -37,10 +53,13 @@
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-glass: var(--glass);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-3: var(--accent-3);
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
 }
@@ -48,12 +67,14 @@
 /* ---------- Base ---------- */
 @layer base {
   html {
+    background: var(--bg);
     scroll-behavior: smooth;
     scroll-padding-top: 5rem;
     -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-bg text-ink font-sans antialiased;
+    /* Transparent so the fixed animated background shows through */
+    @apply text-ink font-sans antialiased;
     font-feature-settings: 'ss01', 'cv11';
   }
   ::selection {
@@ -82,6 +103,7 @@
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
@@ -97,44 +119,202 @@
   }
 
   .chip {
-    @apply inline-flex items-center rounded-full border border-line bg-surface px-2.5 py-0.5 font-mono text-[0.72rem] text-muted;
+    @apply inline-flex items-center rounded-full border border-line bg-glass px-2.5 py-0.5 font-mono text-[0.72rem] text-muted backdrop-blur-sm transition-colors;
   }
 
   .btn-primary,
   .btn-ghost {
-    @apply inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors;
+    @apply relative inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-[background-color,color,border-color,box-shadow,transform] duration-300 active:scale-[0.97];
   }
   .btn-primary {
     @apply bg-ink text-bg hover:bg-accent hover:text-accent-ink;
   }
+  .btn-primary:hover {
+    box-shadow:
+      0 0 0 1px var(--accent),
+      0 10px 30px -8px var(--accent);
+  }
   .btn-ghost {
-    @apply border border-line bg-surface hover:border-ink;
+    @apply border border-line bg-glass backdrop-blur-sm hover:border-accent;
+  }
+  .btn-ghost:hover {
+    box-shadow: 0 8px 26px -12px var(--accent);
   }
 
   .link {
     @apply underline decoration-line decoration-1 underline-offset-4 transition-colors hover:decoration-accent;
   }
 
+  /*
+   * Glass card. With [data-tilt] it leans towards the cursor; --mx/--my (set in JS)
+   * drive a soft spotlight inside and a glowing gradient edge.
+   */
   .card {
-    @apply relative rounded-2xl border border-line bg-surface transition-[border-color,transform] duration-300;
+    @apply relative rounded-2xl border border-line bg-glass backdrop-blur-md;
+    transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition:
+      transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1),
+      border-color 0.3s,
+      box-shadow 0.3s;
   }
   .card:hover {
-    @apply border-ink/30;
+    box-shadow: 0 24px 60px -30px color-mix(in oklab, var(--accent) 60%, transparent);
+  }
+  .card[data-tilting] {
+    transition:
+      transform 0.08s linear,
+      border-color 0.3s,
+      box-shadow 0.3s;
+  }
+  .card::before,
+  .card::after {
+    content: '';
+    position: absolute;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+  .card::before {
+    inset: 0;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), var(--accent-soft), transparent 45%);
+  }
+  .card::after {
+    inset: -1px;
+    padding: 1px;
+    background: radial-gradient(
+      260px circle at var(--mx, 50%) var(--my, 50%),
+      var(--accent),
+      color-mix(in oklab, var(--accent-2) 60%, transparent) 40%,
+      transparent 70%
+    );
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+  }
+  .card:hover::before,
+  .card:hover::after {
+    opacity: 1;
+  }
+  /* Keep content above the spotlight layer (utilities like .absolute still win) */
+  .card > * {
+    position: relative;
+  }
+
+  /* Animated gradient text */
+  .text-gradient {
+    background: linear-gradient(100deg, var(--accent), var(--accent-3), var(--accent-2), var(--accent));
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 9s linear infinite;
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position: 300% 0;
+  }
+}
+
+@keyframes spin-angle {
+  to {
+    --angle: 360deg;
+  }
+}
+
+/* Rotating gradient ring with a soft glow (avatar) */
+.glow-ring {
+  position: relative;
+  isolation: isolate;
+}
+.glow-ring::before,
+.glow-ring::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  z-index: -1;
+  border-radius: inherit;
+  background: conic-gradient(from var(--angle), var(--accent), var(--accent-3), var(--accent-2), var(--accent));
+  animation: spin-angle 6s linear infinite;
+}
+.glow-ring::after {
+  inset: -6px;
+  filter: blur(28px);
+  opacity: 0.55;
+}
+
+/* Infinite marquee (content is duplicated in markup) */
+.marquee {
+  mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+}
+.marquee-track {
+  animation: marquee 40s linear infinite;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Typing caret */
+.caret {
+  display: inline-block;
+  width: 0.55ch;
+  height: 1.1em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background: var(--accent);
+  animation: blink 1s steps(1) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Pulsing ring for "current" markers */
+.pulse-ring {
+  animation: pulse-ring 2.4s cubic-bezier(0.2, 0.7, 0.2, 1) infinite;
+}
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 14px transparent;
   }
 }
 
 /* Scroll reveal — only hides content once JS has confirmed it can show it again */
 .js [data-reveal] {
   opacity: 0;
-  transform: translateY(14px);
+  transform: translateY(28px) scale(0.985);
+  filter: blur(6px);
   transition:
-    opacity 0.6s ease,
-    transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+    opacity 0.8s ease,
+    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1),
+    filter 0.8s ease;
   transition-delay: var(--reveal-delay, 0ms);
 }
 .js [data-reveal].is-visible {
   opacity: 1;
   transform: none;
+  filter: none;
+}
+
+/* Section eyebrow line grows in when revealed */
+[data-reveal] .eyebrow-line {
+  transform-origin: left;
+  transition: transform 0.9s 0.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.js [data-reveal]:not(.is-visible) .eyebrow-line {
+  transform: scaleX(0);
 }
 
 /* ---------- Prose (blog posts) ---------- */

@@ -10,12 +10,13 @@ export const profile = {
   name: 'Nông Minh Chiến',
   shortName: 'Chiến',
   handle: 'chiencse',
-  role: 'Fullstack Developer',
+  role: 'Software Engineer',
+  company: 'VNG',
   tagline: 'Fullstack developer, backend at heart.',
   intro:
     'I design and build backend systems that stay fast, secure and easy to change — and the web apps that sit on top of them.',
   about: [
-    'I am a Fullstack Developer specialising in backend system design and optimisation, with a Computer Science foundation from Ho Chi Minh City University of Technology (HCMUT).',
+    'I am a Software Engineer at VNG, specialising in backend system design and optimisation, with a Computer Science foundation from Ho Chi Minh City University of Technology (HCMUT).',
     'Most of my work lives on the server: modelling the domain, shaping APIs, picking the right storage, and keeping services observable once they are in production. I lean on Clean Architecture, Domain-Driven Design and Hexagonal Architecture to keep codebases readable as they grow.',
   ],
   location: 'Ho Chi Minh City, Vietnam',
@@ -26,6 +27,7 @@ export const profile = {
 };
 
 export const facts: { label: string; value: string }[] = [
+  { label: 'Currently', value: 'Software Engineer @ VNG' },
   { label: 'University', value: 'HCMUT — Computer Science' },
   { label: 'GPA', value: '3.5 / 4.0' },
   { label: 'Focus', value: 'Backend · System design' },
@@ -35,15 +37,27 @@ export const facts: { label: string; value: string }[] = [
 export type Experience = {
   role: string;
   company: string;
-  logo: ImageMetadata;
+  /** Company logo; without one a monogram of the company name is shown. */
+  logo?: ImageMetadata;
   period: string;
+  current?: boolean;
   summary: string;
-  stack: string[];
-  highlights: string[];
+  /** Products or projects worked on, shown as labelled tags. */
+  products?: string[];
+  stack?: string[];
+  highlights?: string[];
 };
 
 // Newest first.
 export const experiences: Experience[] = [
+  {
+    role: 'Software Engineer',
+    company: 'VNG',
+    period: 'Jun 2026 — Present',
+    current: true,
+    summary: 'Building internal platforms at VNG.',
+    products: ['Operation Tool', 'AI Composer', 'Portal Service'],
+  },
   {
     role: 'Product Backend Intern',
     company: 'Geek Up',

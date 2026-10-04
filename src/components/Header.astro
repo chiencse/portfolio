@@ -1,0 +1,128 @@
+---
+import Icon from './Icon.astro';
+import { profile } from '@/data/site';
+import { url } from '@/lib/utils';
+
+const path = Astro.url.pathname;
+const onBlog = path.startsWith(url('blog'));
+
+const links = [
+  { label: 'About', href: url('#about') },
+  { label: 'Experience', href: url('#experience') },
+  { label: 'Projects', href: url('#projects') },
+  { label: 'Blog', href: url('blog/'), active: onBlog },
+  { label: 'Contact', href: url('#contact') },
+];
+---
+
+<header class="sticky top-0 z-40 border-b border-transparent bg-bg/80 backdrop-blur-md transition-colors" data-header>
+  <div class="container-page flex h-16 items-center justify-between gap-4">
+    <a href={url('/')} class="group flex items-center gap-2 font-mono text-sm font-medium" aria-label="Home">
+      <span class="grid size-7 place-items-center rounded-lg bg-ink text-xs font-bold text-bg transition-colors group-hover:bg-accent group-hover:text-accent-ink">
+        C
+      </span>
+      <span>{profile.handle}<span class="text-accent">.</span></span>
+    </a>
+
+    <nav aria-label="Main" class="hidden md:block">
+      <ul class="flex items-center gap-1 text-sm">
+        {
+          links.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                class:list={[
+                  'rounded-full px-3 py-1.5 transition-colors hover:text-ink',
+                  link.active ? 'bg-surface-2 text-ink' : 'text-muted',
+                ]}
+                aria-current={link.active ? 'page' : undefined}
+              >
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="flex items-center gap-1.5">
+      <button
+        type="button"
+        class="grid size-9 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-ink"
+        aria-label="Toggle colour theme"
+        data-theme-toggle
+      >
+        <Icon name="moon" class="dark:hidden" />
+        <Icon name="sun" class="hidden dark:block" />
+      </button>
+      <a href={url(profile.cv)} class="btn-primary hidden sm:inline-flex" download>
+        <Icon name="download" size={16} />
+        CV
+      </a>
+      <button
+        type="button"
+        class="grid size-9 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-ink md:hidden"
+        aria-label="Open menu"
+        aria-expanded="false"
+        aria-controls="mobile-nav"
+        data-menu-toggle
+      >
+        <Icon name="menu" class="[[aria-expanded=true]>&]:hidden" />
+        <Icon name="close" class="hidden [[aria-expanded=true]>&]:block" />
+      </button>
+    </div>
+  </div>
+
+  <nav id="mobile-nav" aria-label="Mobile" class="hidden border-t border-line bg-bg md:hidden" data-mobile-nav>
+    <ul class="container-page flex flex-col py-3">
+      {
+        links.map((link) => (
+          <li>
+            <a
+              href={link.href}
+              class:list={['block py-2.5 text-base', link.active ? 'text-accent' : 'text-ink']}
+              aria-current={link.active ? 'page' : undefined}
+            >
+              {link.label}
+            </a>
+          </li>
+        ))
+      }
+      <li class="pt-2 pb-1">
+        <a href={url(profile.cv)} class="btn-primary" download>
+          <Icon name="download" size={16} />
+          Download CV
+        </a>
+      </li>
+    </ul>
+  </nav>
+</header>
+
+<script>
+  const root = document.documentElement;
+
+  document.querySelector('[data-theme-toggle]')?.addEventListener('click', () => {
+    const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = next;
+    try {
+      localStorage.setItem('theme', next);
+    } catch {}
+  });
+
+  const header = document.querySelector<HTMLElement>('[data-header]');
+  const menuButton = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+  const mobileNav = document.querySelector<HTMLElement>('[data-mobile-nav]');
+
+  const setMenu = (open: boolean) => {
+    menuButton?.setAttribute('aria-expanded', String(open));
+    menuButton?.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    mobileNav?.classList.toggle('hidden', !open);
+  };
+  menuButton?.addEventListener('click', () => setMenu(menuButton.getAttribute('aria-expanded') !== 'true'));
+  mobileNav?.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setMenu(false)));
+
+  // Hairline under the header once the page has scrolled.
+  const onScroll = () => header?.classList.toggle('border-line', window.scrollY > 8);
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+</script>

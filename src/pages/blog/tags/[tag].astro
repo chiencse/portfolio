@@ -1,0 +1,37 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Base from '@/layouts/Base.astro';
+import Icon from '@/components/Icon.astro';
+import PostCard from '@/components/PostCard.astro';
+import { getPosts, getTags, slugify, url } from '@/lib/utils';
+
+export const getStaticPaths = (async () => {
+  const posts = await getPosts();
+  return getTags(posts).map((tag) => ({
+    params: { tag: tag.slug },
+    props: {
+      name: tag.name,
+      posts: posts.filter((post) => post.data.tags.some((t) => slugify(t) === tag.slug)),
+    },
+  }));
+}) satisfies GetStaticPaths;
+
+const { name, posts } = Astro.props;
+---
+
+<Base title={`#${name}`} description={`Posts tagged “${name}”.`}>
+  <section class="container-page pt-14 pb-8 sm:pt-20">
+    <a href={url('blog/')} class="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
+      <Icon name="arrow-left" size={15} /> All posts
+    </a>
+    <h1 class="mt-6 text-4xl font-bold tracking-tight sm:text-5xl">
+      <span class="text-accent">#</span>{name}
+    </h1>
+    <p class="mt-3 font-mono text-xs text-muted">{posts.length} {posts.length === 1 ? 'post' : 'posts'}</p>
+  </section>
+  <section class="container-page">
+    <div class="divide-y divide-line border-y border-line">
+      {posts.map((post) => <PostCard post={post} />)}
+    </div>
+  </section>
+</Base>

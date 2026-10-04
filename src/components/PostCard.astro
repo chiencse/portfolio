@@ -1,0 +1,30 @@
+---
+import type { Post } from '@/lib/utils';
+import { formatDate, readingTime, url } from '@/lib/utils';
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+const { title, description, pubDate, tags, draft } = post.data;
+---
+
+<article class="group relative grid gap-2 py-6 sm:grid-cols-[8.5rem_1fr] sm:gap-6">
+  <p class="font-mono text-xs text-muted sm:pt-1.5">
+    <time datetime={pubDate.toISOString()}>{formatDate(pubDate)}</time>
+  </p>
+  <div>
+    <h3 class="text-lg font-semibold tracking-tight text-balance">
+      <a href={url(`blog/${post.id}/`)} class="after:absolute after:inset-0 group-hover:text-accent">
+        {title}
+      </a>
+      {draft && <span class="chip ml-2 align-middle text-accent">draft</span>}
+    </h3>
+    <p class="mt-1.5 text-muted text-pretty">{description}</p>
+    <p class="mt-3 flex flex-wrap items-center gap-2 font-mono text-xs text-muted">
+      <span>{readingTime(post.body)}</span>
+      {tags.map((tag) => <span>· #{tag}</span>)}
+    </p>
+  </div>
+</article>

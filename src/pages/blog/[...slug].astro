@@ -1,0 +1,159 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { Image } from 'astro:assets';
+import { render } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import Icon from '@/components/Icon.astro';
+import { profile } from '@/data/site';
+import { formatDate, getPosts, readingTime, slugify, url } from '@/lib/utils';
+
+export const getStaticPaths = (async () => {
+  const posts = await getPosts();
+  return posts.map((post, i) => ({
+    params: { slug: post.id },
+    // `posts` is newest first, so the next-newer post sits at i - 1.
+    props: { post, newer: posts[i - 1], older: posts[i + 1] },
+  }));
+}) satisfies GetStaticPaths;
+
+const { post, newer, older } = Astro.props;
+const { title, description, pubDate, updatedDate, tags, cover, coverAlt, draft } = post.data;
+const { Content, headings } = await render(post);
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+<Base title={title} description={description} image={cover?.src} type="article">
+  <article class="container-page pt-12 sm:pt-16">
+    <a href={url('blog/')} class="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
+      <Icon name="arrow-left" size={15} /> All posts
+    </a>
+
+    <header class="mt-8 max-w-3xl">
+      <p class="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-muted">
+        <time datetime={pubDate.toISOString()}>{formatDate(pubDate)}</time>
+        <span aria-hidden="true">·</span>
+        <span>{readingTime(post.body)}</span>
+        {
+          updatedDate && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>
+                Updated <time datetime={updatedDate.toISOString()}>{formatDate(updatedDate)}</time>
+              </span>
+            </>
+          )
+        }
+        {draft && <span class="chip text-accent">draft</span>}
+      </p>
+      <h1 class="mt-4 text-3xl leading-tight font-bold tracking-tight text-balance sm:text-5xl">{title}</h1>
+      <p class="mt-5 text-lg text-muted text-pretty">{description}</p>
+      {
+        tags.length > 0 && (
+          <ul class="mt-6 flex flex-wrap gap-2" aria-label="Tags">
+            {tags.map((tag) => (
+              <li>
+                <a href={url(`blog/tags/${slugify(tag)}/`)} class="chip transition-colors hover:border-accent hover:text-ink">
+                  #{tag}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </header>
+
+    {
+      cover && (
+        <Image
+          src={cover}
+          alt={coverAlt ?? ''}
+          widths={[640, 960, 1280, 1600]}
+          sizes="(min-width: 1024px) 960px, 100vw"
+          loading="eager"
+          class="mt-10 aspect-[2/1] w-full rounded-2xl border border-line object-cover"
+        />
+      )
+    }
+
+    <div class="mt-10 grid gap-12 border-t border-line pt-10 lg:grid-cols-[minmax(0,1fr)_14rem]">
+      <div class="prose-post min-w-0">
+        <Content />
+      </div>
+
+      {
+        toc.length > 1 && (
+          <aside class="order-first lg:order-last" aria-label="On this page">
+            <details class="group rounded-xl border border-line bg-surface p-4 lg:sticky lg:top-24 lg:border-0 lg:bg-transparent lg:p-0" open>
+              <summary class="cursor-pointer list-none font-mono text-xs tracking-wider text-muted uppercase lg:pointer-events-none">
+                On this page
+              </summary>
+              <ol class="mt-3 space-y-2 text-sm" data-toc>
+                {toc.map((h) => (
+                  <li class:list={[h.depth === 3 && 'pl-3']}>
+                    <a href={`#${h.slug}`} class="block text-muted transition-colors hover:text-ink data-[active]:text-accent">
+                      {h.text}
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </details>
+          </aside>
+        )
+      }
+    </div>
+
+    <footer class="mt-16 max-w-3xl">
+      <div class="flex items-center gap-4 rounded-2xl border border-line bg-surface p-5">
+        <div class="min-w-0">
+          <p class="font-medium">Written by {profile.name}</p>
+          <p class="text-sm text-muted">
+            Questions or feedback? <a href={`mailto:${profile.email}`} class="link text-ink">Email me</a>.
+          </p>
+        </div>
+      </div>
+
+      {
+        (newer || older) && (
+          <nav class="mt-8 grid gap-4 sm:grid-cols-2" aria-label="More posts">
+            {older ? (
+              <a href={url(`blog/${older.id}/`)} class="card p-5 hover:border-accent">
+                <span class="font-mono text-xs text-muted">← Older</span>
+                <span class="mt-1 block font-medium text-balance">{older.data.title}</span>
+              </a>
+            ) : (
+              <span />
+            )}
+            {newer && (
+              <a href={url(`blog/${newer.id}/`)} class="card p-5 text-right hover:border-accent">
+                <span class="font-mono text-xs text-muted">Newer →</span>
+                <span class="mt-1 block font-medium text-balance">{newer.data.title}</span>
+              </a>
+            )}
+          </nav>
+        )
+      }
+    </footer>
+  </article>
+</Base>
+
+<script>
+  // Highlight the table-of-contents entry for the section currently in view.
+  const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-toc] a')];
+  const targets = links
+    .map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1))))
+    .filter((el): el is HTMLElement => el !== null);
+
+  if (targets.length) {
+    const setActive = (id: string) =>
+      links.forEach((a) => a.toggleAttribute('data-active', a.hash.slice(1) === encodeURIComponent(id)));
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((e) => e.isIntersecting);
+        if (visible.length) setActive(visible[0].target.id);
+      },
+      { rootMargin: '-80px 0px -70% 0px' },
+    );
+    targets.forEach((t) => io.observe(t));
+  }
+</script>

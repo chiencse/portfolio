@@ -1,0 +1,35 @@
+---
+import Icon from './Icon.astro';
+import { profile } from '@/data/site';
+import { url } from '@/lib/utils';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="mt-24 border-t border-line">
+  <div class="container-page flex flex-col gap-4 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
+    <p>© {year} {profile.name}. Built with Astro.</p>
+    <ul class="flex items-center gap-1">
+      <li>
+        <a href={profile.github} class="grid size-9 place-items-center rounded-full hover:bg-surface-2 hover:text-ink" aria-label="GitHub">
+          <Icon name="github" />
+        </a>
+      </li>
+      <li>
+        <a href={`mailto:${profile.email}`} class="grid size-9 place-items-center rounded-full hover:bg-surface-2 hover:text-ink" aria-label="Email">
+          <Icon name="mail" />
+        </a>
+      </li>
+      <li>
+        <a href={profile.facebook} class="grid size-9 place-items-center rounded-full hover:bg-surface-2 hover:text-ink" aria-label="Facebook">
+          <Icon name="facebook" />
+        </a>
+      </li>
+      <li>
+        <a href={url('rss.xml')} class="grid size-9 place-items-center rounded-full hover:bg-surface-2 hover:text-ink" aria-label="RSS feed">
+          <Icon name="rss" />
+        </a>
+      </li>
+    </ul>
+  </div>
+</footer>

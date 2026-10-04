@@ -1,0 +1,182 @@
+---
+title: 'Goroutine và channel: concurrency kiểu Go hoạt động thế nào'
+description: Goroutine rẻ tới mức chạy cả trăm nghìn cái cùng lúc — vì sao? Mô hình G-M-P của scheduler, channel có và không có buffer, select, WaitGroup, cùng những lỗi kinh điển như goroutine leak và data race.
+pubDate: 2026-10-04T07:00:00+07:00
+tags: [go, concurrency, backend]
+---
+
+import Figure from '@/components/blog/Figure.astro';
+import Callout from '@/components/blog/Callout.astro';
+import GoScheduler from '@/components/diagrams/GoScheduler.astro';
+import GoChannel from '@/components/diagrams/GoChannel.astro';
+
+Concurrency là lý do nhiều người chọn Go. Chỉ cần thêm chữ `go` trước một lời gọi hàm là có một goroutine chạy song song, và chạy cả trăm nghìn goroutine trên một laptop vẫn ổn. Bài này giải thích vì sao điều đó khả thi, và cách các goroutine nói chuyện với nhau một cách an toàn.
+
+## Goroutine là gì?
+
+<Callout type="concept" title="Goroutine">
+Một hàm chạy đồng thời, do **Go runtime** quản lý chứ không phải hệ điều hành. Mỗi goroutine bắt đầu với stack chỉ vài KB và tự lớn lên khi cần. So với OS thread (thường có stack cỡ MB và tốn chi phí chuyển ngữ cảnh ở kernel), goroutine rẻ hơn nhiều bậc.
+</Callout>
+
+```go
+func fetch(url string) {
+	resp, err := http.Get(url)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer resp.Body.Close()
+	log.Println(url, resp.Status)
+}
+
+func main() {
+	go fetch("https://go.dev")      // chạy đồng thời
+	go fetch("https://example.com") // chạy đồng thời
+	time.Sleep(2 * time.Second)     // ❌ cách chờ tồi — xem WaitGroup bên dưới
+}
+```
+
+### Scheduler G-M-P
+
+Go runtime ánh xạ **nhiều** goroutine lên **ít** OS thread, theo mô hình gồm ba thành phần:
+
+<Figure caption="G xếp hàng trên P; mỗi P gắn với một M (OS thread) để chạy; P rảnh sẽ lấy bớt việc từ P khác.">
+  <GoScheduler />
+</Figure>
+
+- **G (goroutine)**: đơn vị công việc.
+- **M (machine)**: một OS thread thật.
+- **P (processor)**: "giấy phép" được chạy Go code, kèm một hàng đợi goroutine cục bộ. Số P bằng `GOMAXPROCS`, mặc định là số CPU khả dụng. Từ Go 1.25, trên Linux con số này còn tính theo CPU limit của container.
+
+Khi một goroutine bị chặn vì chờ mạng, chờ channel hay `time.Sleep`, scheduler cất nó sang một bên và cho goroutine khác chạy trên cùng thread. Chi phí chuyển đổi chỉ cỡ trăm nanosecond, không cần vào kernel. Khi hàng đợi của một P cạn, nó **lấy bớt việc** (work stealing) từ P khác nên CPU luôn bận.
+
+Vì vậy viết code Go **kiểu blocking** (gọi `http.Get` rồi chờ) vẫn đạt hiệu năng gần với code bất đồng bộ, mà không cần `async/await` hay callback.
+
+## Channel: giao tiếp thay vì chia sẻ bộ nhớ
+
+> *Don't communicate by sharing memory; share memory by communicating.* — Go proverb
+
+<Callout type="concept" title="Channel">
+Một "ống" có kiểu dữ liệu để goroutine gửi giá trị cho nhau. Gửi `ch <- v`, nhận `v := <-ch`. Channel tự đồng bộ: bên gửi và bên nhận chờ nhau theo đúng quy tắc, nên không cần lock.
+</Callout>
+
+<Figure caption="Unbuffered: hai bên gặp nhau tại một điểm. Buffered: có hàng đợi ở giữa.">
+  <GoChannel />
+</Figure>
+
+```go
+results := make(chan string) // unbuffered
+
+for _, url := range urls {
+	go func() {
+		resp, err := http.Get(url)
+		if err != nil {
+			results <- url + ": " + err.Error()
+			return
+		}
+		resp.Body.Close()
+		results <- url + ": " + resp.Status
+	}()
+}
+
+for range urls {
+	fmt.Println(<-results) // nhận đúng len(urls) kết quả
+}
+```
+
+<Callout type="tip" title="Biến vòng lặp từ Go 1.22">
+Từ Go 1.22, mỗi vòng lặp `for` có biến `url` **riêng**, nên closure trong goroutine bắt đúng giá trị. Ở các phiên bản cũ hơn, mọi goroutine có thể cùng thấy giá trị cuối cùng. Đó là lý do bạn hay gặp `url := url` trong code cũ.
+</Callout>
+
+### Quy tắc của channel
+
+| Thao tác | Channel mở | Channel đã đóng | Channel `nil` |
+| --- | --- | --- | --- |
+| Gửi `ch <- v` | chặn tới khi có người nhận hoặc còn chỗ | **panic** | chặn mãi |
+| Nhận `<-ch` | chặn tới khi có dữ liệu | trả zero value ngay, `ok == false` | chặn mãi |
+| `close(ch)` | OK | **panic** | **panic** |
+
+Quy ước quan trọng nhất: **bên gửi đóng channel**, không bao giờ là bên nhận. `for v := range ch` sẽ thoát khi channel được đóng và đã đọc hết.
+
+### `select`: chờ nhiều thứ cùng lúc
+
+```go
+select {
+case msg := <-messages:
+	handle(msg)
+case <-time.After(3 * time.Second):
+	log.Println("timeout")
+case <-ctx.Done():
+	return ctx.Err() // bị hủy từ bên ngoài — xem bài về context
+}
+```
+
+`select` chặn tới khi **một** nhánh sẵn sàng. Nếu có nhiều nhánh cùng sẵn sàng, Go chọn ngẫu nhiên một nhánh. Thêm `default` thì `select` không bao giờ chặn.
+
+## Chờ goroutine kết thúc: `sync.WaitGroup`
+
+```go
+var wg sync.WaitGroup
+for _, url := range urls {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		fetch(url)
+	}()
+}
+wg.Wait() // chặn tới khi mọi goroutine gọi Done()
+```
+
+Từ Go 1.25 có thể viết gọn hơn bằng `wg.Go(func() { fetch(url) })`, tự `Add` và `Done` giúp bạn. Khi cần cả **lỗi** lẫn **giới hạn song song**, hãy dùng `errgroup` (xem bài [Concurrency patterns](../go-concurrency-patterns/)).
+
+## Ba lỗi kinh điển
+
+<Callout type="warning" title="1. Goroutine leak">
+Goroutine chặn mãi mãi thì không bao giờ được giải phóng:
+
+```go
+func first(urls []string) string {
+	ch := make(chan string) // unbuffered
+	for _, u := range urls {
+		go func() { ch <- get(u) }()
+	}
+	return <-ch // chỉ nhận 1 → các goroutine còn lại chặn mãi ở "ch <-"
+}
+```
+
+Sửa bằng `make(chan string, len(urls))` để mọi goroutine gửi được rồi thoát, hoặc dùng `context` để hủy các goroutine còn lại. Trong test, thư viện `go.uber.org/goleak` giúp phát hiện goroutine bị rò.
+</Callout>
+
+<Callout type="warning" title="2. Data race">
+Hai goroutine cùng ghi một biến hoặc một map mà không đồng bộ. Kết quả sai ngẫu nhiên, hoặc runtime báo `concurrent map writes` rồi crash. Luôn chạy test với **`go test -race`**. Sửa bằng channel, `sync.Mutex`, hoặc `sync/atomic` cho bộ đếm đơn giản.
+</Callout>
+
+<Callout type="warning" title="3. Quên rằng main thoát là chương trình thoát">
+Khi `main()` return, mọi goroutine bị dừng ngay, kể cả khi đang ghi dở file. Luôn chờ chúng bằng WaitGroup hoặc channel, và dùng graceful shutdown cho server.
+</Callout>
+
+## Channel hay Mutex?
+
+- **Channel**: khi **chuyển quyền sở hữu** dữ liệu (job đi từ producer sang worker), điều phối các bước, hoặc báo hiệu (done, cancel).
+- **Mutex**: khi **bảo vệ một trạng thái chung** đơn giản như cache hay bộ đếm. Mutex thường gọn và nhanh hơn trong trường hợp này.
+
+## Use case
+
+<Callout type="usecase" title="Gọi nhiều API song song">
+Trang chi tiết sản phẩm cần thông tin sản phẩm, đánh giá và tồn kho từ ba service. Gọi song song bằng ba goroutine thì tổng thời gian bằng lời gọi chậm nhất, không phải tổng ba lời gọi.
+</Callout>
+
+<Callout type="usecase" title="Server xử lý hàng nghìn kết nối">
+`net/http` tạo một goroutine cho mỗi request. Code handler viết tuần tự, dễ đọc, và vẫn xử lý được hàng nghìn kết nối đồng thời.
+</Callout>
+
+<Callout type="usecase" title="Xử lý nền">
+Consumer đọc message từ Kafka, mỗi partition một goroutine. Channel chuyển kết quả sang goroutine ghi database theo lô.
+</Callout>
+
+## Tóm tắt
+
+- Goroutine rẻ vì do runtime quản lý: stack nhỏ, scheduler G-M-P, chuyển đổi không cần kernel.
+- Channel vừa truyền dữ liệu vừa đồng bộ. Bên gửi đóng channel, và `select` để chờ nhiều nguồn.
+- Luôn biết **goroutine của bạn kết thúc khi nào và bằng cách nào**. Không trả lời được câu hỏi này thì gần như chắc chắn có leak.
+- `go test -race` nên chạy trong CI.

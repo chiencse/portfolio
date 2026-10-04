@@ -1,0 +1,64 @@
+---
+const columns = [
+  { x: 40, p: 'P1', m: 'M1', running: 'G1', queue: ['G2', 'G3', 'G4', 'G5'] },
+  { x: 400, p: 'P2', m: 'M2', running: 'G6', queue: ['G7'] },
+];
+---
+
+<svg viewBox="0 0 720 322" role="img" aria-label="Mô hình G-M-P của Go scheduler: goroutine xếp hàng trên P, chạy trên OS thread M">
+  <defs>
+    <marker id="gs-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head"></path>
+    </marker>
+    <marker id="gs-arrow-alt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head-alt"></path>
+    </marker>
+  </defs>
+
+  <rect x="230" y="10" width="260" height="40" rx="10" class="box-ghost"></rect>
+  <text x="246" y="35" class="s mono">global run queue</text>
+  <rect x="402" y="18" width="36" height="24" rx="6" class="box"></rect>
+  <text x="420" y="34" text-anchor="middle" class="s mono">G8</text>
+  <rect x="444" y="18" width="36" height="24" rx="6" class="box"></rect>
+  <text x="462" y="34" text-anchor="middle" class="s mono">G9</text>
+
+  {
+    columns.map((col) => (
+      <g>
+        <rect x={col.x} y="70" width="280" height="86" rx="12" class="box-accent" />
+        <text x={col.x + 16} y="94" class="t mono">
+          {col.p}
+        </text>
+        <text x={col.x + 46} y="94" class="s">
+          local run queue
+        </text>
+        {col.queue.map((g, i) => (
+          <g>
+            <rect x={col.x + 16 + i * 52} y="108" width="44" height="32" rx="8" class="box" />
+            <text x={col.x + 38 + i * 52} y="129" text-anchor="middle" class="c mono">
+              {g}
+            </text>
+          </g>
+        ))}
+
+        <line x1={col.x + 140} y1="156" x2={col.x + 140} y2="180" class="edge" marker-end="url(#gs-arrow)" />
+        <rect x={col.x} y="184" width="280" height="50" rx="12" class="box-info" />
+        <text x={col.x + 16} y="206" class="t mono">
+          {col.m}
+        </text>
+        <text x={col.x + 16} y="224" class="s">
+          OS thread · đang chạy <tspan class="mono">{col.running}</tspan>
+        </text>
+
+        <line x1={col.x + 140} y1="234" x2={col.x + 140} y2="258" class="edge" marker-end="url(#gs-arrow)" />
+        <rect x={col.x} y="262" width="280" height="40" rx="12" class="box" />
+        <text x={col.x + 140} y="287" text-anchor="middle" class="c">
+          CPU core
+        </text>
+      </g>
+    ))
+  }
+
+  <path d="M260,140 C300,170 420,170 456,142" class="edge-alt dashed" marker-end="url(#gs-arrow-alt)"></path>
+  <text x="358" y="182" text-anchor="middle" class="s fill-alt">work stealing</text>
+</svg>

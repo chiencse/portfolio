@@ -1,0 +1,74 @@
+---
+const partitions = [
+  { name: 'P0', count: 7, y: 60 },
+  { name: 'P1', count: 5, y: 130 },
+  { name: 'P2', count: 6, y: 200 },
+];
+---
+
+<svg viewBox="0 0 720 300" role="img" aria-label="Producer ghi vào topic có 3 partition, consumer group đọc theo offset">
+  <defs>
+    <marker id="kt-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head"></path>
+    </marker>
+    <marker id="kt-arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head-accent"></path>
+    </marker>
+  </defs>
+
+  <!-- Producers -->
+  <rect x="16" y="62" width="112" height="44" rx="10" class="box-info"></rect>
+  <text x="72" y="89" text-anchor="middle" class="t">Producer A</text>
+  <rect x="16" y="176" width="112" height="44" rx="10" class="box-info"></rect>
+  <text x="72" y="203" text-anchor="middle" class="t">Producer B</text>
+  <text x="72" y="250" text-anchor="middle" class="s">key → hash</text>
+  <text x="72" y="266" text-anchor="middle" class="s">→ chọn partition</text>
+
+  <line x1="128" y1="80" x2="178" y2="84" class="edge" marker-end="url(#kt-arrow)"></line>
+  <line x1="128" y1="92" x2="178" y2="150" class="edge" marker-end="url(#kt-arrow)"></line>
+  <line x1="128" y1="198" x2="178" y2="220" class="edge" marker-end="url(#kt-arrow)"></line>
+
+  <!-- Topic -->
+  <rect x="168" y="20" width="350" height="262" rx="16" class="box-ghost"></rect>
+  <text x="184" y="42" class="s mono fill-accent">topic: orders</text>
+  {
+    partitions.map((p) => (
+      <g>
+        <text x="186" y={p.y + 29} class="t mono">
+          {p.name}
+        </text>
+        {Array.from({ length: p.count }, (_, i) => (
+          <g>
+            <rect
+              x={222 + i * 38}
+              y={p.y + 6}
+              width="34"
+              height="36"
+              rx="6"
+              class={i === p.count - 1 ? 'box-accent' : 'box'}
+            />
+            <text x={239 + i * 38} y={p.y + 29} text-anchor="middle" class="s mono">
+              {i}
+            </text>
+          </g>
+        ))}
+      </g>
+    ))
+  }
+  <text x="343" y="268" text-anchor="middle" class="s">ô = 1 message · số = offset · ghi nối vào cuối (append-only)</text>
+
+  <!-- Consumer group -->
+  <rect x="556" y="40" width="152" height="220" rx="16" class="box-ghost"></rect>
+  <text x="570" y="62" class="s mono fill-accent">group: billing</text>
+  <rect x="572" y="76" width="120" height="48" rx="10" class="box-alt"></rect>
+  <text x="632" y="98" text-anchor="middle" class="t">Consumer 1</text>
+  <text x="632" y="115" text-anchor="middle" class="s">P0 + P1</text>
+  <rect x="572" y="168" width="120" height="48" rx="10" class="box-alt"></rect>
+  <text x="632" y="190" text-anchor="middle" class="t">Consumer 2</text>
+  <text x="632" y="207" text-anchor="middle" class="s">P2</text>
+  <text x="632" y="244" text-anchor="middle" class="s">commit offset đã xử lý</text>
+
+  <line x1="500" y1="84" x2="570" y2="94" class="edge-accent flow" marker-end="url(#kt-arrow-accent)"></line>
+  <line x1="500" y1="154" x2="570" y2="108" class="edge-accent flow" marker-end="url(#kt-arrow-accent)"></line>
+  <line x1="500" y1="224" x2="570" y2="194" class="edge-accent flow" marker-end="url(#kt-arrow-accent)"></line>
+</svg>

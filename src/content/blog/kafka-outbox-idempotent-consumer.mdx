@@ -1,0 +1,172 @@
+---
+title: 'At-least-once, exactly-once và vì sao bạn cần Outbox + Idempotent Consumer'
+description: Ghi database rồi gửi Kafka — hai thao tác, hai hệ thống, và vô số cách để lệch nhau. Transactional Outbox giải quyết phía gửi, idempotent consumer giải quyết phía nhận. Có SQL và code mẫu.
+pubDate: 2026-10-04T09:00:00+07:00
+tags: [kafka, distributed-systems, backend, architecture]
+---
+
+import Figure from '@/components/blog/Figure.astro';
+import Callout from '@/components/blog/Callout.astro';
+import DeliverySemantics from '@/components/diagrams/DeliverySemantics.astro';
+import Outbox from '@/components/diagrams/Outbox.astro';
+
+Bài [Kafka từ con số 0](../kafka-co-ban/) đã giới thiệu cách gửi và nhận message. Bài này nói về phần khó hơn: làm sao để **không mất** message và **không xử lý trùng**, khi mạng có thể đứt và process có thể chết ở bất kỳ dòng code nào.
+
+## Ba mức đảm bảo giao nhận
+
+<Figure caption="Thời điểm commit offset quyết định bạn có thể mất message hay nhận trùng.">
+  <DeliverySemantics />
+</Figure>
+
+<Callout type="concept" title="At-most-once">
+Commit offset **trước** rồi mới xử lý. Nếu crash giữa chừng, message coi như đã đọc và **bị mất**. Chỉ chấp nhận được với dữ liệu mất cũng không sao, ví dụ metric lấy mẫu.
+</Callout>
+
+<Callout type="concept" title="At-least-once">
+Xử lý **trước** rồi mới commit. Nếu crash sau khi xử lý nhưng trước khi commit, message sẽ được giao **lại**. Không mất dữ liệu, nhưng có thể **trùng**. Đây là lựa chọn mặc định hợp lý cho hầu hết hệ thống.
+</Callout>
+
+<Callout type="concept" title="Exactly-once">
+Kafka có idempotent producer và transaction, nhưng chúng chỉ đảm bảo exactly-once **bên trong Kafka**: đọc từ topic này, ghi sang topic khác. Khi xử lý có **tác dụng phụ ra ngoài** (ghi database, gửi email, gọi API thanh toán) thì cách thực tế là **at-least-once + xử lý idempotent**. Kết quả *như thể* mỗi message chỉ được xử lý một lần.
+</Callout>
+
+Tóm lại, có hai vấn đề cần giải:
+
+1. **Phía gửi**: lưu dữ liệu vào database *và* gửi sự kiện lên Kafka, sao cho không bao giờ chỉ xảy ra một trong hai.
+2. **Phía nhận**: nhận trùng là chuyện bình thường, nên xử lý trùng phải vô hại.
+
+## Vấn đề phía gửi: dual write
+
+Cách viết ngây thơ:
+
+```ts
+await db.query('INSERT INTO orders ...');          // (1)
+await kafka.send('order-events', orderPlaced);     // (2)
+```
+
+- Crash giữa (1) và (2): đơn hàng đã lưu nhưng **không ai biết**, nên không có email xác nhận và kho không trừ hàng.
+- Đảo ngược thứ tự: sự kiện đã gửi nhưng insert lỗi, thành ra email xác nhận cho một **đơn hàng không tồn tại**.
+- Bọc cả hai trong transaction database cũng không giải quyết được, vì Kafka không tham gia vào transaction của Postgres.
+
+Đây là bài toán **dual write**: ghi vào hai hệ thống mà không có transaction chung.
+
+## Transactional Outbox
+
+Ý tưởng: **chỉ ghi vào một chỗ**, là database. Sự kiện được ghi vào bảng `outbox` *trong cùng transaction* với dữ liệu nghiệp vụ. Một tiến trình khác (relay) đọc outbox rồi đẩy lên Kafka.
+
+<Figure caption="Đơn hàng và sự kiện cùng commit hoặc cùng rollback; relay đẩy sự kiện lên Kafka; consumer bỏ qua message đã thấy.">
+  <Outbox />
+</Figure>
+
+### Bảng outbox
+
+```sql
+CREATE TABLE outbox (
+  id           uuid PRIMARY KEY,
+  aggregate_id text        NOT NULL,          -- dùng làm Kafka key (vd: order_id)
+  event_type   text        NOT NULL,          -- 'OrderPlaced'
+  payload      jsonb       NOT NULL,
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  published_at timestamptz                    -- NULL = chưa gửi
+);
+CREATE INDEX outbox_unpublished ON outbox (created_at) WHERE published_at IS NULL;
+```
+
+### Ghi nghiệp vụ và sự kiện trong một transaction
+
+```ts
+await db.transaction(async (tx) => {
+  const order = await tx.query(
+    'INSERT INTO orders (id, customer_id, total) VALUES ($1, $2, $3) RETURNING *',
+    [orderId, customerId, total],
+  );
+  await tx.query(
+    'INSERT INTO outbox (id, aggregate_id, event_type, payload) VALUES ($1, $2, $3, $4)',
+    [randomUUID(), orderId, 'OrderPlaced', order.rows[0]],
+  );
+}); // commit cả hai, hoặc không gì cả
+```
+
+### Relay: đọc outbox và đẩy lên Kafka
+
+```sql
+-- Mỗi vòng relay: "nhận" một lô sự kiện chưa gửi
+SELECT id, aggregate_id, event_type, payload
+FROM outbox
+WHERE published_at IS NULL
+ORDER BY created_at
+LIMIT 100
+FOR UPDATE SKIP LOCKED;
+```
+
+`FOR UPDATE SKIP LOCKED` cho phép chạy **nhiều instance relay** cùng lúc mà không giẫm chân nhau: mỗi instance lấy một lô khác nhau, các dòng đang bị instance khác giữ thì bỏ qua. Gửi lên Kafka thành công thì cập nhật `published_at = now()` rồi commit.
+
+<Callout type="warning" title="Relay vẫn có thể gửi trùng">
+Nếu relay gửi Kafka thành công nhưng crash trước khi cập nhật `published_at`, lần sau nó sẽ gửi lại. Outbox biến bài toán "có thể mất" thành "có thể trùng", và trùng thì phía nhận xử lý được. Vì vậy outbox **luôn đi kèm** idempotent consumer.
+</Callout>
+
+Thay cho polling, bạn có thể dùng **CDC** (ví dụ Debezium) đọc WAL của Postgres và đẩy các dòng mới của bảng `outbox` lên Kafka. Cách này cho độ trễ thấp hơn và không phải query liên tục, đổi lại phải vận hành thêm một hệ thống.
+
+## Idempotent Consumer
+
+<Callout type="concept" title="Idempotent">
+Một thao tác là idempotent nếu thực hiện một lần hay nhiều lần đều cho **cùng kết quả**. `SET status = 'paid'` là idempotent; `balance = balance + 100` thì không.
+</Callout>
+
+Có hai cách làm phổ biến.
+
+**1. Bảng dedupe**: ghi ID của message đã xử lý *trong cùng transaction* với tác dụng phụ:
+
+```sql
+CREATE TABLE processed_messages (
+  message_id   uuid PRIMARY KEY,
+  processed_at timestamptz NOT NULL DEFAULT now()
+);
+```
+
+```ts
+async function handle(event: OrderPlaced) {
+  await db.transaction(async (tx) => {
+    const inserted = await tx.query(
+      'INSERT INTO processed_messages (message_id) VALUES ($1) ON CONFLICT DO NOTHING',
+      [event.id],
+    );
+    if (inserted.rowCount === 0) return; // đã xử lý rồi → bỏ qua
+
+    await tx.query('UPDATE inventory SET reserved = reserved + $1 WHERE sku = $2', [
+      event.quantity,
+      event.sku,
+    ]);
+  });
+  // commit offset Kafka SAU khi transaction thành công
+}
+```
+
+**2. Thiết kế thao tác tự idempotent**: dùng upsert theo khóa tự nhiên (`INSERT ... ON CONFLICT (order_id) DO UPDATE`), dùng state machine chỉ cho chuyển `pending → paid` một lần, hoặc truyền **idempotency key** khi gọi API bên ngoài. Các cổng thanh toán lớn đều hỗ trợ header này.
+
+<Callout type="tip" title="Gửi email thì sao?">
+Email không rollback được. Hãy ghi dòng "đã gửi email cho message X" vào database **trước**, rồi mới gửi. Nếu gửi lỗi thì retry dựa trên trạng thái đã ghi. Hoặc dùng nhà cung cấp email có hỗ trợ idempotency key.
+</Callout>
+
+## Use case
+
+<Callout type="usecase" title="Thương mại điện tử">
+Đặt hàng lưu `orders` + `outbox`. Các service thanh toán, kho và email đọc `OrderPlaced`, mỗi service tự khử trùng lặp. Không còn tình trạng đơn hàng "mồ côi" thiếu email xác nhận.
+</Callout>
+
+<Callout type="usecase" title="Ví điện tử / cộng điểm thưởng">
+Cộng tiền là thao tác **không** idempotent, nên bắt buộc dùng bảng dedupe theo `transaction_id`. Nhận trùng một message mà cộng tiền hai lần là sự cố tài chính.
+</Callout>
+
+<Callout type="usecase" title="Đồng bộ sang search index">
+Ghi sản phẩm vào Postgres kèm outbox, consumer upsert vào Elasticsearch theo `product_id`. Upsert vốn đã idempotent, nên không cần thêm bảng dedupe.
+</Callout>
+
+## Checklist
+
+- [ ] Không có chỗ nào vừa ghi database vừa gửi Kafka trực tiếp trong cùng một luồng request.
+- [ ] Sự kiện đi qua outbox (polling hoặc CDC).
+- [ ] Mỗi sự kiện có `id` duy nhất, ổn định qua các lần gửi lại.
+- [ ] Consumer commit offset **sau** khi xử lý, và xử lý thì idempotent.
+- [ ] Có job dọn dẹp bảng outbox và bảng dedupe cũ.
+- [ ] Có metric: số dòng outbox chưa gửi, consumer lag.

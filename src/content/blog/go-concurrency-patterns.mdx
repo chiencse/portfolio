@@ -1,0 +1,236 @@
+---
+title: 'Concurrency patterns trong Go: worker pool, errgroup, pipeline và graceful shutdown'
+description: Ghép goroutine, channel và context thành các mẫu dùng hằng ngày — giới hạn song song, gom lỗi, pipeline có backpressure, tắt server không mất request. Code chạy được cho từng mẫu.
+pubDate: 2026-10-04T05:00:00+07:00
+tags: [go, concurrency, backend, architecture]
+---
+
+import Figure from '@/components/blog/Figure.astro';
+import Callout from '@/components/blog/Callout.astro';
+import WorkerPool from '@/components/diagrams/WorkerPool.astro';
+import GoPipeline from '@/components/diagrams/GoPipeline.astro';
+
+Hai bài trước đã nói về [goroutine và channel](../go-goroutine-channel/) và [context](../go-context/). Bài này ghép chúng lại thành những mẫu (pattern) gặp hằng ngày khi viết backend Go.
+
+## 1. Worker pool: giới hạn độ song song
+
+**Vấn đề:** cần xử lý 10.000 ảnh. Mỗi ảnh một goroutine thì sẽ có 10.000 kết nối tới storage cùng lúc, và bị rate limit hoặc hết RAM.
+
+<Callout type="concept" title="Worker pool">
+Tạo **N goroutine cố định** (worker) cùng đọc từ một channel `jobs`. Độ song song không bao giờ vượt quá N, dù có bao nhiêu job.
+</Callout>
+
+<Figure caption="N worker cùng range trên một channel jobs; kết quả gom về channel results.">
+  <WorkerPool />
+</Figure>
+
+```go
+func resizeAll(ctx context.Context, paths []string, workers int) []Result {
+	jobs := make(chan string)
+	results := make(chan Result)
+
+	var wg sync.WaitGroup
+	for range workers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for p := range jobs { // thoát khi jobs bị đóng
+				results <- resize(ctx, p)
+			}
+		}()
+	}
+
+	go func() { // producer
+		defer close(jobs)
+		for _, p := range paths {
+			select {
+			case jobs <- p:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	go func() { // đóng results khi mọi worker xong
+		wg.Wait()
+		close(results)
+	}()
+
+	var out []Result
+	for r := range results {
+		out = append(out, r)
+	}
+	return out
+}
+```
+
+Ba goroutine "quản lý" có vai trò rõ ràng: producer **đóng `jobs`**, các worker thoát khi `jobs` cạn, và một goroutine chờ worker xong thì **đóng `results`**. Mỗi channel chỉ có đúng một chỗ đóng.
+
+## 2. errgroup: song song kèm lỗi và hủy
+
+Worker pool tự viết khá dài. Khi chỉ cần "chạy các việc này song song, giới hạn N, có lỗi thì dừng", hãy dùng `golang.org/x/sync/errgroup`:
+
+```go
+import "golang.org/x/sync/errgroup"
+
+func loadDashboard(ctx context.Context, userID string) (*Dashboard, error) {
+	g, ctx := errgroup.WithContext(ctx) // ctx bị hủy khi có goroutine trả lỗi
+	var d Dashboard
+
+	g.Go(func() (err error) { d.Profile, err = profiles.Get(ctx, userID); return })
+	g.Go(func() (err error) { d.Orders, err = orders.Recent(ctx, userID); return })
+	g.Go(func() (err error) { d.Points, err = loyalty.Balance(ctx, userID); return })
+
+	if err := g.Wait(); err != nil { // trả về lỗi ĐẦU TIÊN
+		return nil, err
+	}
+	return &d, nil
+}
+```
+
+Mỗi goroutine ghi vào **một field riêng** nên không có data race. Muốn giới hạn song song khi lặp qua danh sách dài thì thêm `g.SetLimit(10)`, và `g.Go` sẽ chặn khi đã có 10 goroutine đang chạy.
+
+<Callout type="tip" title="Khi nào không muốn dừng sớm?">
+Nếu cần **mọi** kết quả kể cả khi vài việc lỗi (ví dụ gửi thông báo cho 1.000 người, ai lỗi thì ghi lại), đừng trả lỗi từ `g.Go`. Hãy ghi lỗi vào slice kết quả và để nhóm chạy hết. Có thể dùng `errors.Join` để gom tất cả lỗi.
+</Callout>
+
+## 3. Pipeline và backpressure
+
+Dữ liệu đi qua nhiều bước, mỗi bước có tốc độ khác nhau: đọc file nhanh, gọi API chậm, ghi DB theo lô.
+
+<Figure caption="Mỗi stage là goroutine (hoặc nhóm goroutine) nối bằng channel có giới hạn.">
+  <GoPipeline />
+</Figure>
+
+```go
+func parse(ctx context.Context, lines <-chan string) <-chan Record {
+	out := make(chan Record, 100)
+	go func() {
+		defer close(out) // stage nào tạo channel thì stage đó đóng
+		for line := range lines {
+			rec, err := parseLine(line)
+			if err != nil {
+				continue // hoặc gửi sang channel lỗi
+			}
+			select {
+			case out <- rec: // chặn khi stage sau chưa kịp đọc → backpressure
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return out
+}
+
+// Ghép: lines → parse → enrich (fan-out 3) → merge → save
+recs := parse(ctx, readLines(ctx, file))
+enriched := merge(ctx, enrich(ctx, recs), enrich(ctx, recs), enrich(ctx, recs))
+err := saveInBatches(ctx, enriched, 500)
+```
+
+<Callout type="concept" title="Backpressure">
+Channel có **dung lượng giới hạn** nên khi stage sau chậm, channel đầy, stage trước bị chặn ở lệnh gửi và tự động chậm lại. Bộ nhớ dùng luôn bị chặn trên, không phình ra chỉ vì database đang chậm. Không bao giờ dùng hàng đợi "vô hạn" (slice cứ append) giữa các stage.
+</Callout>
+
+**Fan-out** là nhiều goroutine cùng đọc một channel, giống worker pool. **Fan-in** (`merge`) là gom nhiều channel về một:
+
+```go
+func merge[T any](ctx context.Context, ins ...<-chan T) <-chan T {
+	out := make(chan T)
+	var wg sync.WaitGroup
+	for _, in := range ins {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for v := range in {
+				select {
+				case out <- v:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}()
+	}
+	go func() { wg.Wait(); close(out) }()
+	return out
+}
+```
+
+## 4. Semaphore bằng buffered channel
+
+Cần giới hạn số lời gọi đồng thời tới một tài nguyên, ví dụ tối đa 5 request tới API bên thứ ba, ở bất kỳ đâu trong code:
+
+```go
+sem := make(chan struct{}, 5)
+
+func callPartner(ctx context.Context, req Request) (Response, error) {
+	select {
+	case sem <- struct{}{}: // lấy 1 "vé"
+	case <-ctx.Done():
+		return Response{}, ctx.Err()
+	}
+	defer func() { <-sem }() // trả vé
+	return partner.Do(ctx, req)
+}
+```
+
+Thư viện `golang.org/x/sync/semaphore` hỗ trợ thêm trường hợp mỗi việc lấy nhiều "vé" (weighted).
+
+## 5. Graceful shutdown
+
+Khi deploy, process nhận SIGTERM. Tắt ngay sẽ làm request đang xử lý bị cắt ngang và job đang chạy dở bị mất.
+
+```go
+func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	srv := &http.Server{Addr: ":8080", Handler: routes()}
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatal(err)
+		}
+	}()
+
+	g, gctx := errgroup.WithContext(ctx)
+	g.Go(func() error { return runConsumer(gctx) }) // worker nền dừng khi ctx bị hủy
+
+	<-ctx.Done() // chờ tín hiệu tắt
+	log.Println("đang tắt…")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	_ = srv.Shutdown(shutdownCtx) // ngừng nhận mới, chờ request đang chạy xong
+	_ = g.Wait()                  // chờ worker hoàn tất job dở
+}
+```
+
+<Callout type="warning" title="Timeout tắt phải ngắn hơn của orchestrator">
+Kubernetes mặc định chờ 30 giây sau SIGTERM rồi gửi SIGKILL. Timeout shutdown của bạn (20 giây ở trên) phải nhỏ hơn con số đó, nếu không process sẽ bị giết giữa lúc đang dọn dẹp.
+</Callout>
+
+## Use case
+
+<Callout type="usecase" title="Import file CSV lớn">
+Pipeline gồm đọc dòng, parse, validate (fan-out), rồi ghi DB theo lô 500 dòng. Channel có giới hạn nên file 10 GB vẫn chạy với RAM ổn định.
+</Callout>
+
+<Callout type="usecase" title="Trang tổng hợp (BFF)">
+`errgroup` gọi song song 4–5 service backend. Một service lỗi thì hủy các lời gọi còn lại và trả lỗi sớm.
+</Callout>
+
+<Callout type="usecase" title="Gọi API đối tác có rate limit">
+Semaphore giới hạn số request đồng thời, kết hợp `golang.org/x/time/rate` để giới hạn số request mỗi giây.
+</Callout>
+
+## Tóm tắt
+
+| Mẫu | Dùng khi |
+| --- | --- |
+| Worker pool | Nhiều job giống nhau, cần giới hạn song song |
+| errgroup | Vài việc song song, cần lỗi đầu tiên và hủy phần còn lại |
+| Pipeline + channel có giới hạn | Dữ liệu qua nhiều bước có tốc độ khác nhau |
+| Semaphore | Giới hạn truy cập một tài nguyên dùng chung |
+| Graceful shutdown | Mọi service chạy production |
+
+Quy tắc xuyên suốt: **mỗi goroutine phải có đường thoát** (channel đóng hoặc ctx bị hủy), và **mỗi channel chỉ có một chỗ đóng**.

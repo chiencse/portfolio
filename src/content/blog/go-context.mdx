@@ -1,0 +1,167 @@
+---
+title: 'context.Context trong Go: hủy, timeout và truyền dữ liệu theo request'
+description: Vì sao hàm nào trong Go cũng nhận ctx làm tham số đầu tiên? Cây context, cancel lan truyền, deadline, WithValue dùng đúng chỗ — và những lỗi hay gặp khi làm việc với context.
+pubDate: 2026-10-04T06:00:00+07:00
+tags: [go, concurrency, backend]
+---
+
+import Figure from '@/components/blog/Figure.astro';
+import Callout from '@/components/blog/Callout.astro';
+import ContextTree from '@/components/diagrams/ContextTree.astro';
+import ContextRequest from '@/components/diagrams/ContextRequest.astro';
+
+Đọc code Go phía server, bạn sẽ thấy `ctx context.Context` ở khắp nơi: tham số đầu tiên của handler, service, repository, client HTTP. Nó trông như "thủ tục" thừa thãi, nhưng thực ra giải quyết một bài toán rất thật: **khi không còn ai cần kết quả nữa, hãy dừng việc lại.**
+
+## Bài toán
+
+Một request vào API đặt hàng sẽ query database, gọi API thanh toán và ghi log. Nếu giữa chừng:
+
+- người dùng **đóng tab**,
+- hoặc request đã chạy **quá 2 giây** mà load balancer đã trả 504,
+- hoặc server đang **tắt** để deploy,
+
+thì việc tiếp tục chạy query và gọi API chỉ lãng phí kết nối database, tiền gọi API và CPU. Cần một cách báo cho **mọi goroutine liên quan** rằng "dừng đi". Đó chính là `context`.
+
+<Callout type="concept" title="context.Context">
+Một giá trị mang theo **tín hiệu hủy**, **hạn chót** (deadline) và vài **dữ liệu theo request**, được truyền xuyên suốt chuỗi lời gọi. Interface của nó chỉ có 4 method: `Done()`, `Err()`, `Deadline()`, `Value()`.
+</Callout>
+
+## Cây context
+
+Context luôn được tạo **từ một context cha**, nên chúng tạo thành một cây:
+
+<Figure caption="Hủy context cha thì toàn bộ nhánh con bị hủy theo; context ở nhánh khác không bị ảnh hưởng.">
+  <ContextTree />
+</Figure>
+
+```go
+ctx := context.Background()                            // gốc, không bao giờ bị hủy
+
+ctx, cancel := context.WithCancel(parent)              // hủy thủ công
+ctx, cancel := context.WithTimeout(parent, 2*time.Second)
+ctx, cancel := context.WithDeadline(parent, time.Now().Add(2*time.Second))
+ctx          = context.WithValue(parent, key, value)   // gắn dữ liệu
+```
+
+Mỗi hàm `With…` trả về context **con**. Hai quy tắc quan trọng:
+
+1. Hủy cha thì **mọi con bị hủy**. Hủy con thì **cha không bị ảnh hưởng**.
+2. Context con không thể sống lâu hơn cha: `WithTimeout(parent, 10s)` mà cha chỉ còn 2 giây thì con cũng hết hạn sau 2 giây.
+
+<Callout type="warning" title="Luôn gọi cancel()">
+```go
+ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+defer cancel() // giải phóng timer và liên kết với cha ngay khi xong việc
+```
+Quên `cancel` sẽ giữ tài nguyên cho tới khi hết timeout. `go vet` có check `lostcancel` để bắt lỗi này.
+</Callout>
+
+## Context đi theo request
+
+<Figure caption="Một ctx duy nhất đi từ handler xuống mọi lời gọi I/O; client ngắt kết nối thì cả chuỗi dừng.">
+  <ContextRequest />
+</Figure>
+
+```go
+func (h *Handler) PlaceOrder(w http.ResponseWriter, r *http.Request) {
+	// r.Context() tự bị hủy khi client ngắt kết nối
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
+
+	order, err := h.orders.Place(ctx, parseOrder(r))
+	if errors.Is(err, context.DeadlineExceeded) {
+		http.Error(w, "hết thời gian xử lý", http.StatusGatewayTimeout)
+		return
+	}
+	// ...
+}
+
+func (s *OrderService) Place(ctx context.Context, o Order) (Order, error) {
+	row := s.db.QueryRowContext(ctx, `SELECT stock FROM products WHERE id = $1`, o.ProductID)
+	// ...
+	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, s.paymentURL, body)
+	resp, err := s.http.Do(req) // tự hủy khi ctx bị hủy
+	// ...
+}
+```
+
+Thư viện chuẩn và hầu hết thư viện phổ biến (database/sql, pgx, net/http, gRPC, Kafka client…) đều nhận `ctx`. Bạn chỉ cần **truyền xuống**, và việc hủy sẽ tự diễn ra.
+
+### Tự lắng nghe hủy trong code của bạn
+
+Với vòng lặp dài hoặc goroutine tự viết, hãy kiểm tra `ctx.Done()`:
+
+```go
+func process(ctx context.Context, jobs <-chan Job) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err() // context.Canceled hoặc context.DeadlineExceeded
+		case job, ok := <-jobs:
+			if !ok {
+				return nil // channel đã đóng, hết việc
+			}
+			if err := handle(ctx, job); err != nil {
+				return err
+			}
+		}
+	}
+}
+```
+
+## `WithValue`: dùng đúng chỗ
+
+`WithValue` gắn dữ liệu vào context, nhưng rất dễ lạm dụng. Chỉ dùng cho **dữ liệu theo request** cắt ngang nhiều lớp: request ID, trace ID, thông tin người dùng đã xác thực.
+
+```go
+type ctxKey struct{} // kiểu riêng, không export → không package nào khác đụng được
+
+func WithRequestID(ctx context.Context, id string) context.Context {
+	return context.WithValue(ctx, ctxKey{}, id)
+}
+
+func RequestID(ctx context.Context) string {
+	id, _ := ctx.Value(ctxKey{}).(string)
+	return id
+}
+```
+
+<Callout type="warning" title="Không truyền tham số nghiệp vụ qua context">
+`ctx.Value("userID")` thay cho tham số `userID` khiến hàm có **dependency ẩn**: đọc chữ ký hàm không biết nó cần gì, compiler không kiểm tra được kiểu, và test phải nhớ nhét giá trị vào ctx. Cũng không dùng `string` làm key vì dễ đụng nhau giữa các package.
+</Callout>
+
+## Quy ước khi dùng context
+
+- `ctx` là **tham số đầu tiên**, đặt tên `ctx`: `func Do(ctx context.Context, …)`.
+- **Không lưu ctx trong struct.** Truyền theo từng lời gọi, vì mỗi request có ctx riêng.
+- Không truyền `nil`. Chưa biết dùng gì thì dùng `context.TODO()`.
+- Ở `main` hoặc khi khởi tạo thì dùng `context.Background()`.
+- Context dùng an toàn từ nhiều goroutine cùng lúc.
+
+### Vài API mới đáng biết
+
+- `context.WithCancelCause` / `context.Cause(ctx)` (Go 1.20): hủy kèm **lý do** cụ thể thay vì chỉ `context.Canceled`.
+- `context.WithoutCancel(ctx)` (Go 1.21): giữ các value nhưng **không** bị hủy theo cha. Hữu ích khi cần ghi audit log sau khi request đã kết thúc.
+- `context.AfterFunc(ctx, f)` (Go 1.21): chạy `f` khi ctx bị hủy.
+- `signal.NotifyContext`: ctx bị hủy khi nhận SIGINT hoặc SIGTERM, dùng cho graceful shutdown.
+
+## Use case
+
+<Callout type="usecase" title="Timeout cho từng bước">
+Toàn request có 2 giây, trong đó gọi API thanh toán tối đa 800ms: `context.WithTimeout(ctx, 800*time.Millisecond)`. Bước con không thể ăn hết thời gian của cả request.
+</Callout>
+
+<Callout type="usecase" title="Gọi song song, một bên lỗi thì hủy hết">
+`errgroup.WithContext` tạo ctx chung. Một goroutine lỗi thì ctx bị hủy, các goroutine còn lại dừng sớm thay vì chạy vô ích.
+</Callout>
+
+<Callout type="usecase" title="Graceful shutdown">
+`signal.NotifyContext` cho ctx gốc. Khi deploy, server ngừng nhận request mới, worker hoàn tất job đang dở rồi thoát.
+</Callout>
+
+## Tóm tắt
+
+- Context mang **tín hiệu hủy, deadline và dữ liệu theo request** xuyên suốt chuỗi lời gọi.
+- Cây context: hủy chỉ lan **từ cha xuống con**.
+- Luôn `defer cancel()`, luôn truyền ctx xuống mọi lời gọi I/O, và kiểm tra `ctx.Done()` trong vòng lặp dài.
+- `WithValue` chỉ dùng cho dữ liệu cắt ngang như request ID hay trace, không dùng cho tham số nghiệp vụ.

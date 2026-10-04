@@ -1,0 +1,39 @@
+---
+const impls = [
+  { name: 'EmailSender', sub: 'gửi qua SMTP', y: 20, cls: 'box-info' },
+  { name: 'SMSSender', sub: 'gọi API nhà mạng', y: 96, cls: 'box-info' },
+  { name: 'FakeNotifier', sub: 'chỉ dùng trong test', y: 172, cls: 'box-alt' },
+];
+---
+
+<svg viewBox="0 0 720 250" role="img" aria-label="Interface được định nghĩa ở phía dùng; các struct thỏa interface một cách ngầm định">
+  <defs>
+    <marker id="gi-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head-accent"></path>
+    </marker>
+  </defs>
+
+  <rect x="12" y="44" width="300" height="160" rx="14" class="box-ghost"></rect>
+  <text x="28" y="66" class="s mono fill-accent">package order (phía dùng)</text>
+  <rect x="28" y="80" width="268" height="104" rx="10" class="box-accent"></rect>
+  <text x="44" y="106" class="c mono">type Notifier interface {"{"}</text>
+  <text x="60" y="130" class="c mono">Notify(ctx, msg) error</text>
+  <text x="44" y="154" class="c mono">{"}"}</text>
+  <text x="44" y="174" class="s">chỉ khai báo đúng thứ order cần</text>
+
+  {
+    impls.map((impl) => (
+      <g>
+        <rect x="470" y={impl.y} width="238" height="58" rx="10" class={impl.cls} />
+        <text x="486" y={impl.y + 25} class="t mono">
+          {impl.name}
+        </text>
+        <text x="486" y={impl.y + 44} class="s">
+          {impl.sub}
+        </text>
+        <line x1="468" y1={impl.y + 29} x2="298" y2="132" class="edge-accent dashed" marker-end="url(#gi-arrow)" />
+      </g>
+    ))
+  }
+  <text x="384" y="238" text-anchor="middle" class="s">có method Notify đúng chữ ký → tự động thỏa, không cần từ khóa “implements”</text>
+</svg>

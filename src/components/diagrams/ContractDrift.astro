@@ -1,0 +1,55 @@
+<svg viewBox="0 0 720 300" role="img" aria-label="So sánh mock tự viết bị lệch với provider thật và contract test kiểm cả hai phía">
+  <defs>
+    <marker id="cd-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head"></path>
+    </marker>
+    <marker id="cd-arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head-accent"></path>
+    </marker>
+    <marker id="cd-arrow-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head-warn"></path>
+    </marker>
+  </defs>
+
+  <!-- A: hand-written mock -->
+  <text x="20" y="26" class="s mono fill-warn">✕ MOCK TỰ VIẾT TAY</text>
+  <rect x="20" y="40" width="150" height="56" rx="10" class="box"></rect>
+  <text x="95" y="63" text-anchor="middle" class="t">Consumer</text>
+  <text x="95" y="82" text-anchor="middle" class="s">web app</text>
+
+  <rect x="250" y="40" width="170" height="56" rx="10" class="box-warn"></rect>
+  <text x="335" y="63" text-anchor="middle" class="t">Mock (bản cũ)</text>
+  <text x="335" y="82" text-anchor="middle" class="s">trả <tspan class="mono">price: number</tspan></text>
+
+  <rect x="520" y="40" width="180" height="56" rx="10" class="box"></rect>
+  <text x="610" y="63" text-anchor="middle" class="t">Provider thật</text>
+  <text x="610" y="82" text-anchor="middle" class="s">đã đổi thành <tspan class="mono">price: {"{…}"}</tspan></text>
+
+  <line x1="170" y1="68" x2="248" y2="68" class="edge" marker-end="url(#cd-arrow)"></line>
+  <text x="209" y="60" text-anchor="middle" class="s">test ✓</text>
+  <line x1="420" y1="68" x2="518" y2="68" class="edge-warn dashed"></line>
+  <text x="469" y="60" text-anchor="middle" class="s fill-warn">đã lệch</text>
+
+  <path d="M95,96 V118 H610 V100" class="edge-warn" marker-end="url(#cd-arrow-warn)"></path>
+  <text x="352" y="136" text-anchor="middle" class="s fill-warn">lên production mới lộ lỗi</text>
+
+  <!-- B: contract -->
+  <text x="20" y="176" class="s mono fill-accent">✓ CONTRACT TEST</text>
+  <rect x="20" y="190" width="150" height="56" rx="10" class="box"></rect>
+  <text x="95" y="213" text-anchor="middle" class="t">Consumer</text>
+  <text x="95" y="232" text-anchor="middle" class="s">test với contract</text>
+
+  <rect x="275" y="190" width="170" height="56" rx="10" class="box-accent"></rect>
+  <text x="360" y="213" text-anchor="middle" class="t">Contract</text>
+  <text x="360" y="232" text-anchor="middle" class="s">một nguồn sự thật</text>
+
+  <rect x="550" y="190" width="150" height="56" rx="10" class="box"></rect>
+  <text x="625" y="213" text-anchor="middle" class="t">Provider</text>
+  <text x="625" y="232" text-anchor="middle" class="s">verify trong CI</text>
+
+  <line x1="170" y1="218" x2="273" y2="218" class="edge-accent" marker-end="url(#cd-arrow-accent)"></line>
+  <text x="221" y="210" text-anchor="middle" class="s">sinh ra</text>
+  <line x1="548" y1="218" x2="447" y2="218" class="edge-accent" marker-end="url(#cd-arrow-accent)"></line>
+  <text x="497" y="210" text-anchor="middle" class="s">phải thỏa</text>
+  <text x="360" y="282" text-anchor="middle" class="s">Provider đổi response mà phá contract → CI của provider đỏ ngay, trước khi deploy</text>
+</svg>

@@ -1,0 +1,47 @@
+<svg viewBox="0 0 720 330" role="img" aria-label="Hai consumer group cùng đọc một topic: mỗi group nhận đủ mọi message, trong group thì chia partition">
+  <defs>
+    <marker id="kg-arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head-accent"></path>
+    </marker>
+    <marker id="kg-arrow-alt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head-alt"></path>
+    </marker>
+  </defs>
+
+  <!-- Topic -->
+  <rect x="12" y="28" width="226" height="226" rx="16" class="box-ghost"></rect>
+  <text x="28" y="50" class="s mono fill-accent">topic: orders</text>
+  <rect x="28" y="64" width="196" height="44" rx="10" class="box"></rect>
+  <text x="126" y="91" text-anchor="middle" class="t mono">P0</text>
+  <rect x="28" y="124" width="196" height="44" rx="10" class="box"></rect>
+  <text x="126" y="151" text-anchor="middle" class="t mono">P1</text>
+  <rect x="28" y="184" width="196" height="44" rx="10" class="box"></rect>
+  <text x="126" y="211" text-anchor="middle" class="t mono">P2</text>
+
+  <!-- Billing -->
+  <rect x="430" y="12" width="276" height="170" rx="16" class="box-ghost"></rect>
+  <text x="446" y="34" class="s mono fill-accent">group: billing (3 consumer)</text>
+  <rect x="446" y="44" width="244" height="36" rx="8" class="box-accent"></rect>
+  <text x="568" y="67" text-anchor="middle" class="c">B1 ← P0</text>
+  <rect x="446" y="88" width="244" height="36" rx="8" class="box-accent"></rect>
+  <text x="568" y="111" text-anchor="middle" class="c">B2 ← P1</text>
+  <rect x="446" y="132" width="244" height="36" rx="8" class="box-accent"></rect>
+  <text x="568" y="155" text-anchor="middle" class="c">B3 ← P2</text>
+
+  <line x1="224" y1="82" x2="444" y2="62" class="edge-accent" marker-end="url(#kg-arrow-accent)"></line>
+  <line x1="224" y1="142" x2="444" y2="106" class="edge-accent" marker-end="url(#kg-arrow-accent)"></line>
+  <line x1="224" y1="202" x2="444" y2="150" class="edge-accent" marker-end="url(#kg-arrow-accent)"></line>
+
+  <!-- Analytics -->
+  <rect x="430" y="198" width="276" height="100" rx="16" class="box-ghost"></rect>
+  <text x="446" y="220" class="s mono fill-alt">group: analytics (1 consumer)</text>
+  <rect x="446" y="232" width="244" height="50" rx="8" class="box-alt"></rect>
+  <text x="568" y="254" text-anchor="middle" class="c">A1 ← P0 + P1 + P2</text>
+  <text x="568" y="271" text-anchor="middle" class="s">một mình đọc cả topic</text>
+
+  <line x1="224" y1="90" x2="444" y2="246" class="edge-alt dashed" marker-end="url(#kg-arrow-alt)"></line>
+  <line x1="224" y1="150" x2="444" y2="256" class="edge-alt dashed" marker-end="url(#kg-arrow-alt)"></line>
+  <line x1="224" y1="210" x2="444" y2="266" class="edge-alt dashed" marker-end="url(#kg-arrow-alt)"></line>
+
+  <text x="360" y="320" text-anchor="middle" class="s">Mỗi group có offset riêng → billing chậm không làm analytics chậm theo</text>
+</svg>

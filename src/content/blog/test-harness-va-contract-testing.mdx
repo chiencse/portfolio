@@ -1,0 +1,130 @@
+---
+title: 'Test harness và contract testing: test nhanh mà không bị "mock lệch thực tế"'
+description: Test harness là gì, gồm những phần nào, và vì sao mock tự viết tay thường âm thầm lệch khỏi hệ thống thật. Cách giữ hai phía luôn khớp bằng contract dùng chung.
+pubDate: 2026-10-04T10:00:00+07:00
+tags: [testing, architecture, backend]
+---
+
+import Figure from '@/components/blog/Figure.astro';
+import Callout from '@/components/blog/Callout.astro';
+import TestHarness from '@/components/diagrams/TestHarness.astro';
+import ContractDrift from '@/components/diagrams/ContractDrift.astro';
+
+Có một kiểu bug rất khó chịu: **test xanh hết, lên production thì vỡ**. Nguyên nhân thường không nằm ở code, mà ở môi trường test: mock trả về một thứ mà hệ thống thật đã không còn trả nữa.
+
+Bài này nói về **test harness**, phần hạ tầng giúp chạy code trong môi trường kiểm soát được, và về cách giữ harness đó **khớp với thực tế**.
+
+## Test harness là gì?
+
+<Callout type="concept" title="Test harness">
+Toàn bộ "giàn giáo" quanh đoạn code cần test: thứ **khởi động** nó, **cấp dữ liệu** cho nó, **thay thế** các phụ thuộc bên ngoài, và **kiểm tra** kết quả. Test framework (Jest, pytest, Go test) chỉ là một phần của harness.
+</Callout>
+
+<Figure caption="Code cần test nằm giữa; mọi thứ xung quanh nó là harness.">
+  <TestHarness />
+</Figure>
+
+| Thành phần | Vai trò | Ví dụ |
+| --- | --- | --- |
+| **Driver** | Gọi vào code, phát input | Gọi HTTP endpoint, gọi hàm, phát sự kiện |
+| **Fixtures** | Dựng trạng thái ban đầu | Seed database, file mẫu, user giả |
+| **Test double** | Thay phụ thuộc bên ngoài | Stub HTTP, fake repository, DB trong container |
+| **Fake clock** | Điều khiển thời gian | Tua tới 30 ngày sau để test "hết hạn" |
+| **Oracle** | Phán xét đúng sai | `expect(total).toBe(120_000)`, so snapshot |
+
+### Các loại test double
+
+- **Stub**: trả lời cố định. "Gọi `getUser(1)` thì trả `{ name: 'An' }`."
+- **Fake**: một bản cài đặt thật nhưng đơn giản, ví dụ repository lưu trong `Map` thay cho Postgres.
+- **Mock**: stub kèm kiểm tra cách được gọi. "`sendEmail` phải được gọi đúng một lần."
+- **Thật nhưng cô lập**: database hay Kafka chạy trong container (Testcontainers). Chậm hơn nhưng giống thật nhất.
+
+<Callout type="tip" title="Thời gian là một phụ thuộc">
+Code gọi thẳng `Date.now()` rất khó test các tình huống như "gói hết hạn sau 30 ngày". Hãy truyền vào một `Clock` (interface có `now()`): khi chạy thật thì dùng đồng hồ hệ thống, khi test thì dùng đồng hồ giả có thể tua tới. Ngẫu nhiên (`Math.random`, UUID) cũng nên xử lý tương tự.
+</Callout>
+
+## Vấn đề: mock bị "drift"
+
+<Figure caption="Mock tự viết đóng băng ở phiên bản cũ của provider; contract test buộc cả hai phía cùng thỏa một nguồn sự thật.">
+  <ContractDrift />
+</Figure>
+
+Kịch bản quen thuộc:
+
+1. Team frontend viết mock cho API `/products` trả về `price: 120000`.
+2. Ba tháng sau, team backend đổi thành `price: { amount: 120000, currency: "VND" }`.
+3. Test của frontend vẫn xanh, vì mock vẫn trả kiểu cũ.
+4. Lên production, giao diện hiện `[object Object] đ`.
+
+Mock tự viết là **một bản sao của hệ thống khác**, và bản sao thì sẽ dần lệch khỏi bản gốc nếu không có cơ chế buộc chúng khớp nhau.
+
+## Giải pháp: một nguồn sự thật
+
+### Cách 1: schema dùng chung
+
+Nếu hai phía cùng một ngôn ngữ (ví dụ TypeScript ở cả frontend lẫn backend), hãy đặt **schema** ở một package chung. Cả code thật lẫn mock đều phải thỏa schema đó:
+
+```ts
+// packages/contracts/product.ts
+import { z } from 'zod';
+
+export const Product = z.object({
+  id: z.string(),
+  name: z.string(),
+  price: z.object({ amount: z.number().int(), currency: z.enum(['VND', 'USD']) }),
+});
+export type Product = z.infer<typeof Product>;
+```
+
+```ts
+// Backend: test rằng response thật thỏa contract
+it('GET /products trả đúng contract', async () => {
+  const res = await request(app).get('/products');
+  expect(() => z.array(Product).parse(res.body)).not.toThrow();
+});
+
+// Frontend: mock cũng phải thỏa contract, nên không thể trả "price: 120000"
+const mockProducts: Product[] = [
+  { id: 'p1', name: 'Bàn phím', price: { amount: 120000, currency: 'VND' } },
+];
+```
+
+Khi backend đổi schema, mock của frontend **không compile được nữa**, và lỗi lộ ra ngay từ lúc viết code thay vì đợi tới production.
+
+### Cách 2: consumer-driven contract (Pact)
+
+Khi hai phía khác ngôn ngữ hoặc khác team, có thể dùng công cụ như **Pact**:
+
+1. Test của **consumer** ghi lại kỳ vọng: "gọi `GET /products/1` thì cần một response có `price.amount`." Kết quả là một file contract.
+2. Contract được chia sẻ qua một broker.
+3. CI của **provider** phát lại các request trong contract vào service thật và kiểm tra response có thỏa không.
+
+Provider đổi API mà phá contract thì CI của **chính provider** đỏ, trước khi deploy. Contract chỉ chứa những trường consumer thực sự dùng, nên provider vẫn được tự do đổi những phần khác.
+
+### Cách 3: harness chạy code thật của phía kia
+
+Nếu được, cách giống thật nhất là để harness **chạy chính code của hệ thống host**, thay vì tự mô phỏng hành vi của nó. Ví dụ: một plugin cần chạy bên trong một ứng dụng host. Thay vì viết một "host giả" bắt chước API, harness import thư viện SDK thật của host và dựng nó ở chế độ dev. Khi host nâng cấp SDK, harness tự động có hành vi mới, nên không còn chỗ cho drift.
+
+<Callout type="warning" title="Đừng mock thứ bạn không sở hữu">
+Mock trực tiếp thư viện bên thứ ba (SDK thanh toán, client của cloud) thì test sẽ khóa chặt vào chi tiết cài đặt của họ. Hãy bọc thư viện đó trong một **adapter** của bạn (`PaymentGateway`), mock adapter trong unit test, và test adapter với sandbox thật của nhà cung cấp trong integration test.
+</Callout>
+
+## Use case
+
+<Callout type="usecase" title="Frontend và backend tách team">
+Schema chung (OpenAPI hoặc zod) sinh type cho cả hai phía. Mock server cho frontend được sinh từ chính spec đó, không ai viết tay.
+</Callout>
+
+<Callout type="usecase" title="Microservices gọi nhau qua HTTP hoặc Kafka">
+Pact cho HTTP; với Kafka thì đăng ký schema sự kiện (Avro/Protobuf/JSON Schema) trong schema registry và bật kiểm tra tương thích ngược.
+</Callout>
+
+<Callout type="usecase" title="Plugin, micro-frontend, extension">
+Harness dựng host thật ở chế độ dev và nạp plugin vào, kết hợp với test end-to-end bằng Playwright để kiểm tra luồng tích hợp.
+</Callout>
+
+## Tóm tắt
+
+- Test harness gồm driver, fixtures, test double, fake clock và oracle. Hãy thiết kế nó như code sản phẩm.
+- Mock tự viết là bản sao, và bản sao sẽ **drift**. Cần một nguồn sự thật chung: schema dùng chung, contract test, hoặc chạy code thật của phía kia.
+- Lỗi tích hợp nên lộ ra ở **CI của phía gây ra thay đổi**, không phải ở production của phía chịu hậu quả.

@@ -1,0 +1,162 @@
+---
+title: 'Đánh giá output của LLM: eval harness, golden set và kiểm tra ngược bằng mutation'
+description: '"Trông có vẻ ổn" không phải là test. Cách dựng eval harness cho tính năng dùng LLM: golden set, các loại grader, LLM-as-judge — và vì sao phải kiểm tra chính evaluator bằng dữ liệu sai.'
+pubDate: 2026-10-04T11:00:00+07:00
+tags: [ai, llm, testing]
+---
+
+import Figure from '@/components/blog/Figure.astro';
+import Callout from '@/components/blog/Callout.astro';
+import EvalPipeline from '@/components/diagrams/EvalPipeline.astro';
+import MutationCheck from '@/components/diagrams/MutationCheck.astro';
+
+Bạn sửa prompt, thử năm câu, thấy kết quả "có vẻ tốt hơn" rồi deploy. Một tuần sau mới phát hiện một loại input khác đã hỏng từ lúc đổi prompt.
+
+Với code thông thường, ta có unit test. Với tính năng dùng LLM, ta cần **eval**: một bộ test có thể chạy lại, cho ra điểm số, và so sánh được giữa các phiên bản.
+
+## Eval khác unit test ở đâu?
+
+<Callout type="concept" title="Eval">
+Một tập **input mẫu**, mỗi input có **tiêu chí đánh giá**, chạy qua hệ thống LLM rồi chấm điểm tự động. Khác unit test ở chỗ: output không xác định (cùng input, mỗi lần một khác) và "đúng" thường là một **khoảng** chứ không phải một giá trị duy nhất.
+</Callout>
+
+Vì vậy eval không trả lời "pass hay fail", mà trả lời "**bao nhiêu phần trăm** case đạt, và tốt hơn hay tệ hơn phiên bản trước".
+
+<Figure caption="Golden set đi qua hệ thống; nhiều loại grader cùng chấm; điểm số được so giữa các phiên bản.">
+  <EvalPipeline />
+</Figure>
+
+## Bước 1: golden set
+
+Golden set là tập input đại diện, có kèm kỳ vọng. Nguồn tốt nhất theo thứ tự:
+
+1. **Dữ liệu thật** đã ẩn danh: câu hỏi người dùng thật, đặc biệt là những case từng bị báo lỗi.
+2. **Case biên** viết tay: input rỗng, input rất dài, ngôn ngữ lẫn lộn, câu hỏi ngoài phạm vi.
+3. **Dữ liệu tổng hợp** do LLM sinh ra để tăng độ phủ. Cần người duyệt lại.
+
+```ts
+type EvalCase = {
+  id: string;
+  input: string;
+  expect: {
+    mustInclude?: string[];     // các ý bắt buộc phải có
+    mustNotInclude?: string[];  // thông tin cấm (vd: dữ liệu nội bộ)
+    schema?: ZodSchema;         // output phải đúng cấu trúc
+    rubric?: string;            // tiêu chí cho LLM-judge
+  };
+  tags: string[];               // 'edge-case', 'tieng-viet', 'regression'...
+};
+```
+
+<Callout type="tip" title="Mỗi bug thành một eval case">
+Người dùng báo một câu trả lời sai? Thêm đúng input đó vào golden set với tag `regression` trước khi sửa. Giống viết test tái hiện bug trước khi fix.
+</Callout>
+
+## Bước 2: chọn grader
+
+Dùng grader **rẻ nhất mà vẫn đủ tin cậy** cho từng tiêu chí:
+
+| Grader | Khi nào dùng | Ưu / nhược |
+| --- | --- | --- |
+| **Code check** | Đúng schema JSON, có hay không có từ khóa, SQL chạy được, test chạy qua | Nhanh, rẻ, xác định. Nhưng không chấm được chất lượng văn |
+| **LLM-as-judge** | "Có trả lời đúng câu hỏi không?", "Giọng văn có lịch sự không?" | Linh hoạt, nhưng tốn tiền và bản thân cũng có thể sai |
+| **Người review** | Lấy mẫu định kỳ, hiệu chỉnh judge | Chính xác nhất, nhưng chậm và đắt |
+
+### Ví dụ: code check
+
+```ts
+function codeGrade(c: EvalCase, output: string): { pass: boolean; reason?: string } {
+  if (c.expect.schema) {
+    const parsed = c.expect.schema.safeParse(safeJson(output));
+    if (!parsed.success) return { pass: false, reason: 'sai schema' };
+  }
+  for (const s of c.expect.mustNotInclude ?? []) {
+    if (output.includes(s)) return { pass: false, reason: `lộ "${s}"` };
+  }
+  return { pass: true };
+}
+```
+
+### Ví dụ: LLM-as-judge với rubric rõ ràng
+
+```ts
+const judgePrompt = (c: EvalCase, output: string) => `
+Bạn là người chấm điểm. Chấm câu trả lời theo rubric, KHÔNG theo sở thích cá nhân.
+
+<cau_hoi>${c.input}</cau_hoi>
+<cau_tra_loi>${output}</cau_tra_loi>
+<rubric>${c.expect.rubric}</rubric>
+
+Trả về JSON: {"pass": boolean, "reason": "1 câu, trích dẫn phần vi phạm nếu có"}
+`;
+```
+
+<Callout type="warning" title="Cạm bẫy của LLM-as-judge">
+- **Rubric mơ hồ** ("trả lời có tốt không?") cho điểm ngẫu nhiên. Hãy tách thành nhiều câu hỏi có/không cụ thể.
+- **Thiên vị độ dài**: judge thường chấm cao câu trả lời dài hơn. Ghi rõ trong rubric rằng độ dài không phải tiêu chí.
+- **Judge chưa được kiểm chứng**: lấy khoảng 50 case đã có người chấm, so với điểm của judge. Nếu không khớp phần lớn thì sửa rubric trước khi tin vào nó.
+</Callout>
+
+## Bước 3: kiểm tra chính evaluator bằng mutation
+
+Đây là bước hay bị bỏ qua nhất. Eval báo **100% pass** nghe rất tuyệt, nhưng có thể chỉ vì evaluator **không bắt được lỗi nào cả**.
+
+<Figure caption="Chạy toàn case đúng thì evaluator tốt và evaluator mù trông giống hệt nhau.">
+  <MutationCheck />
+</Figure>
+
+<Callout type="concept" title="Mutation testing">
+Cố tình **cài lỗi** vào output hoặc vào cấu hình được kiểm tra (đổi một con số, bỏ một điều kiện, đảo một phép so sánh), rồi chạy evaluator. Evaluator tốt phải **FAIL** với bản lỗi. Nếu vẫn PASS, evaluator đang mù với loại lỗi đó.
+</Callout>
+
+Ví dụ: một hệ thống dùng LLM để **sinh luật** từ mô tả tiếng Việt, kiểu "giảm 10% cho đơn từ 500.000đ trong cuối tuần", thành cấu hình JSON. Evaluator kiểm tra cấu hình sinh ra có đúng ý mô tả không. Cách kiểm chứng evaluator theo **cả hai hướng**:
+
+```ts
+const mutations: Array<(rule: Rule) => Rule> = [
+  (r) => ({ ...r, discountPercent: r.discountPercent * 10 }),       // sai con số
+  (r) => ({ ...r, minOrder: 0 }),                                   // bỏ điều kiện
+  (r) => ({ ...r, days: r.days.filter((d) => d !== 'sunday') }),   // thiếu một ngày
+  (r) => ({ ...r, op: r.op === 'gte' ? 'lt' : 'gte' }),            // đảo phép so sánh
+];
+
+for (const c of goldenSet) {
+  // Hướng 1: luật đúng → evaluator phải PASS (không báo động giả)
+  assert(evaluate(c.description, c.correctRule).pass, `${c.id}: báo động giả`);
+
+  // Hướng 2: mỗi luật sai → evaluator phải FAIL (không để lọt)
+  mutations.forEach((mutate, i) => {
+    const wrong = mutate(c.correctRule);
+    assert(!evaluate(c.description, wrong).pass, `${c.id}: evaluator mù với mutation #${i}`);
+  });
+}
+```
+
+Tỷ lệ mutation bị bắt (*mutation score*) cho biết evaluator đáng tin tới đâu. Chỉ khi con số này cao, điểm eval của hệ thống chính mới có ý nghĩa.
+
+## Bước 4: chạy thường xuyên và so sánh
+
+- Chạy eval trong CI mỗi khi đổi prompt, model, tool hoặc cấu hình retrieval.
+- Báo cáo **theo tag**: tổng điểm tăng 2% có thể đang che một nhóm `tieng-viet` giảm 15%.
+- Chạy mỗi case vài lần nếu output dao động nhiều, và theo dõi cả độ ổn định.
+- Giữ một phần golden set làm **test set** không bao giờ dùng để tinh chỉnh prompt, tránh "học tủ".
+
+## Use case
+
+<Callout type="usecase" title="Chatbot hỗ trợ khách hàng">
+Golden set từ các câu hỏi thật. Code check bắt lỗi lộ thông tin nội bộ, judge kiểm tra câu trả lời có đúng chính sách. Bug người dùng báo lên trở thành case regression.
+</Callout>
+
+<Callout type="usecase" title="Sinh SQL hoặc cấu hình từ ngôn ngữ tự nhiên">
+Code check chạy SQL trên database mẫu và so kết quả với đáp án. Mutation kiểm chứng evaluator phân biệt được `>` với `>=`, `AND` với `OR`.
+</Callout>
+
+<Callout type="usecase" title="Tóm tắt tài liệu">
+Judge kiểm tra từng ý bắt buộc (`mustInclude`) và phát hiện thông tin bịa không có trong tài liệu gốc.
+</Callout>
+
+## Tóm tắt
+
+- Tính năng dùng LLM cần **eval** thay vì cảm giác: golden set, grader và điểm số theo phiên bản.
+- Ưu tiên code check, dùng LLM-as-judge với rubric cụ thể, và hiệu chỉnh judge bằng người chấm.
+- **Kiểm tra chính evaluator** bằng mutation: evaluator phải PASS với output đúng *và* FAIL với output sai.
+- Mỗi bug tìm thấy trở thành một case regression.

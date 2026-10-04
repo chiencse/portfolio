@@ -19,5 +19,14 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      rolldownOptions: {
+        // Astro's MDX pipeline emits a harmless "use astro:head-inject" directive warning per post.
+        onwarn(warning, warn) {
+          if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
+          warn(warning);
+        },
+      },
+    },
   },
 });

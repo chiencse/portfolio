@@ -1,0 +1,47 @@
+---
+const workers = [40, 116, 192];
+---
+
+<svg viewBox="0 0 720 282" role="img" aria-label="Worker pool: producer đẩy job vào channel, N worker xử lý song song, kết quả gom về một channel">
+  <defs>
+    <marker id="wp-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head-accent"></path>
+    </marker>
+  </defs>
+
+  <rect x="12" y="112" width="104" height="56" rx="10" class="box-info"></rect>
+  <text x="64" y="136" text-anchor="middle" class="t">Producer</text>
+  <text x="64" y="155" text-anchor="middle" class="s">gửi job</text>
+
+  <rect x="144" y="120" width="150" height="40" rx="20" class="box-ghost"></rect>
+  <text x="219" y="110" text-anchor="middle" class="s mono">jobs</text>
+  {[0, 1, 2].map((i) => <rect x={160 + i * 40} y="126" width="32" height="28" rx="6" class="box-accent" />)}
+  <line x1="116" y1="140" x2="142" y2="140" class="edge-accent" marker-end="url(#wp-arrow)"></line>
+
+  {
+    workers.map((y, i) => (
+      <g>
+        <rect x="330" y={y} width="120" height="48" rx="10" class="box-alt" />
+        <text x="390" y={y + 21} text-anchor="middle" class="c">
+          Worker {i + 1}
+        </text>
+        <text x="390" y={y + 38} text-anchor="middle" class="s mono">
+          for j := range jobs
+        </text>
+        <line x1="294" y1="140" x2="328" y2={y + 24} class="edge-accent flow" marker-end="url(#wp-arrow)" />
+        <line x1="450" y1={y + 24} x2="484" y2="140" class="edge-accent flow" marker-end="url(#wp-arrow)" />
+      </g>
+    ))
+  }
+
+  <rect x="486" y="120" width="104" height="40" rx="20" class="box-ghost"></rect>
+  <text x="538" y="110" text-anchor="middle" class="s mono">results</text>
+  {[0, 1].map((i) => <rect x={502 + i * 40} y="126" width="32" height="28" rx="6" class="box-accent" />)}
+
+  <rect x="616" y="112" width="92" height="56" rx="10" class="box"></rect>
+  <text x="662" y="136" text-anchor="middle" class="t">Gom</text>
+  <text x="662" y="155" text-anchor="middle" class="s">kết quả</text>
+  <line x1="590" y1="140" x2="614" y2="140" class="edge-accent" marker-end="url(#wp-arrow)"></line>
+
+  <text x="360" y="268" text-anchor="middle" class="s">Số worker cố định = giới hạn độ song song · đóng jobs → worker thoát vòng range</text>
+</svg>

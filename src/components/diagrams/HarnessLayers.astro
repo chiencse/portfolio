@@ -1,0 +1,29 @@
+---
+const layers = [
+  { name: 'Giao diện', desc: 'CLI, IDE, web, API — nơi người dùng giao task và xem tiến độ', cls: 'box' },
+  { name: 'Hooks & quan sát', desc: 'log, tracing, chạy script trước/sau mỗi tool call', cls: 'box' },
+  { name: 'Quyền & sandbox', desc: 'hỏi xác nhận, allowlist, cô lập file và mạng', cls: 'box-warn' },
+  { name: 'Quản lý context', desc: 'nén lịch sử, cắt output dài, memory, subagent', cls: 'box-info' },
+  { name: 'Tool', desc: 'schema đầu vào, thực thi, trả lỗi có cấu trúc', cls: 'box-alt' },
+  { name: 'Model', desc: 'suy luận và quyết định gọi tool nào — phần duy nhất không do bạn viết', cls: 'box-accent' },
+];
+---
+
+<svg viewBox="0 0 720 318" role="img" aria-label="Các lớp của một agent harness, từ giao diện xuống tới model">
+  {
+    layers.map((layer, i) => {
+      const y = 12 + i * 50;
+      return (
+        <g>
+          <rect x="16" y={y} width="688" height="42" rx="10" class={layer.cls} />
+          <text x="36" y={y + 26} class="t">
+            {layer.name}
+          </text>
+          <text x="210" y={y + 26} class="s">
+            {layer.desc}
+          </text>
+        </g>
+      );
+    })
+  }
+</svg>

@@ -1,0 +1,46 @@
+<svg viewBox="0 0 720 270" role="img" aria-label="Eval pipeline: golden set đi qua hệ thống LLM, output được chấm bởi code check, LLM judge và người review">
+  <defs>
+    <marker id="ep-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head"></path>
+    </marker>
+    <marker id="ep-arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head-accent"></path>
+    </marker>
+  </defs>
+
+  <rect x="12" y="98" width="132" height="70" rx="12" class="box-info"></rect>
+  <text x="78" y="128" text-anchor="middle" class="t">Golden set</text>
+  <text x="78" y="148" text-anchor="middle" class="s">input + kỳ vọng</text>
+
+  <rect x="176" y="98" width="144" height="70" rx="12" class="box-accent"></rect>
+  <text x="248" y="128" text-anchor="middle" class="t">Hệ thống LLM</text>
+  <text x="248" y="148" text-anchor="middle" class="s">prompt · model · tool</text>
+
+  <rect x="352" y="98" width="100" height="70" rx="12" class="box"></rect>
+  <text x="402" y="138" text-anchor="middle" class="t">Output</text>
+
+  <line x1="144" y1="133" x2="174" y2="133" class="edge" marker-end="url(#ep-arrow)"></line>
+  <line x1="320" y1="133" x2="350" y2="133" class="edge" marker-end="url(#ep-arrow)"></line>
+
+  <rect x="484" y="12" width="224" height="244" rx="16" class="box-ghost"></rect>
+  <text x="500" y="34" class="s mono fill-accent">GRADERS</text>
+
+  <rect x="500" y="46" width="192" height="56" rx="10" class="box-alt"></rect>
+  <text x="596" y="69" text-anchor="middle" class="t">Code check</text>
+  <text x="596" y="88" text-anchor="middle" class="s">schema, regex, chạy thử</text>
+
+  <rect x="500" y="114" width="192" height="56" rx="10" class="box-alt"></rect>
+  <text x="596" y="137" text-anchor="middle" class="t">LLM-as-judge</text>
+  <text x="596" y="156" text-anchor="middle" class="s">chấm theo rubric</text>
+
+  <rect x="500" y="182" width="192" height="56" rx="10" class="box"></rect>
+  <text x="596" y="205" text-anchor="middle" class="t">Người review</text>
+  <text x="596" y="224" text-anchor="middle" class="s">mẫu nhỏ, định kỳ</text>
+
+  <line x1="452" y1="126" x2="498" y2="76" class="edge-accent" marker-end="url(#ep-arrow-accent)"></line>
+  <line x1="452" y1="133" x2="498" y2="142" class="edge-accent" marker-end="url(#ep-arrow-accent)"></line>
+  <line x1="452" y1="140" x2="498" y2="208" class="edge" marker-end="url(#ep-arrow)"></line>
+
+  <text x="232" y="214" text-anchor="middle" class="c">Điểm số theo từng phiên bản</text>
+  <text x="232" y="234" text-anchor="middle" class="s">so trước / sau mỗi lần đổi prompt hay model</text>
+</svg>

@@ -1,0 +1,136 @@
+---
+title: 'Knowledge base cho AI agent: để agent hiểu codebase thay vì đoán'
+description: AI agent đọc code nhanh nhưng không biết "vì sao" — quy ước, quyết định kiến trúc, cạm bẫy. Cách tổ chức knowledge base nhiều tầng để agent làm đúng ngay từ đầu, và giữ nó không lỗi thời.
+pubDate: 2026-10-04T12:00:00+07:00
+tags: [ai, agents, llm, architecture]
+---
+
+import Figure from '@/components/blog/Figure.astro';
+import Callout from '@/components/blog/Callout.astro';
+import KbLayers from '@/components/diagrams/KbLayers.astro';
+import KbFlow from '@/components/diagrams/KbFlow.astro';
+
+Giao cho AI agent một task trong codebase lớn, bạn sẽ thấy một kiểu lỗi lặp lại: code **chạy được** nhưng **sai cách**. Agent tự viết lại hàm tiện ích đã có sẵn, dùng thư viện mà team đã bỏ, đặt file sai chỗ, hoặc "sửa" một đoạn trông lạ nhưng thật ra cố tình viết vậy.
+
+Nguyên nhân không phải model kém. Agent thiếu **tri thức ngầm**, những thứ không nằm trong code: *vì sao* làm vậy, *quy ước* là gì, *đừng đụng* vào đâu. Knowledge base là cách đưa tri thức đó cho agent.
+
+## Agent cần biết những gì?
+
+<Callout type="concept" title="Context engineering">
+Thiết kế **những gì được đưa vào context** của model, và **vào lúc nào**. Context có giới hạn, và mỗi token nhồi vào mà không liên quan đều làm loãng sự chú ý của model. Mục tiêu là đưa đúng thông tin cần thiết, ít nhất có thể, vào đúng lúc cần.
+</Callout>
+
+Có những thứ agent **tự tìm được** từ code (hàm nào gọi hàm nào, kiểu dữ liệu), và những thứ **không thể suy ra**:
+
+- **Lệnh**: chạy test thế nào, lint thế nào, chạy một service riêng lẻ thế nào.
+- **Quy ước**: lỗi trả về theo format nào, đặt tên ra sao, file mới đặt ở đâu.
+- **Quyết định và lý do**: vì sao dùng Postgres mà không dùng Mongo, vì sao module này không được import module kia.
+- **Cạm bẫy**: "test X hay fail ngẫu nhiên do timezone", "đừng sửa file sinh tự động trong `gen/`".
+
+## Kiến trúc nhiều tầng
+
+Sai lầm phổ biến là dồn mọi thứ vào **một file khổng lồ**. File đó luôn bị nạp vào context, tốn token cho mọi task, và vì quá dài nên không ai cập nhật.
+
+<Figure caption="Tầng trên ngắn và luôn được nạp; tầng dưới chi tiết và chỉ được đọc khi cần.">
+  <KbLayers />
+</Figure>
+
+### Tầng 1: entry file (`AGENTS.md`, `CLAUDE.md`)
+
+Ngắn, thường dưới 200 dòng, chỉ chứa những thứ đúng với **mọi** task:
+
+```markdown
+# AGENTS.md
+
+## Lệnh
+- Cài đặt: `pnpm install`
+- Test một package: `pnpm --filter <tên> test`
+- Kiểm tra trước khi commit: `pnpm lint && pnpm typecheck`
+
+## Bản đồ
+- `apps/api` — HTTP API (NestJS). Đọc `apps/api/README.md` trước khi sửa.
+- `apps/web` — frontend (Next.js).
+- `packages/contracts` — schema dùng chung. Đổi ở đây = đổi API.
+
+## Luật cứng
+- Không sửa file trong `**/generated/**`, chạy `pnpm codegen` để sinh lại.
+- Mọi thay đổi schema DB phải có migration trong `apps/api/migrations`.
+- Không thêm dependency mới khi chưa hỏi.
+
+## Khi không chắc
+Đọc ADR trong `docs/adr/` trước khi đổi kiến trúc.
+```
+
+Lưu ý những gì **không có** trong file: không giải thích từng module, không chép code, không có lịch sử dự án. Entry file là **bản đồ**, không phải sách giáo khoa.
+
+### Tầng 2: doc theo module
+
+Mỗi module quan trọng có một `README.md` ngắn: module làm gì, ranh giới với module khác, quy ước riêng, cạm bẫy. Thêm **ADR** (Architecture Decision Record) cho các quyết định lớn:
+
+```markdown
+# ADR-007: Dùng outbox thay vì gửi Kafka trực tiếp
+
+## Bối cảnh
+Ghi DB rồi gửi Kafka gây mất sự kiện khi service crash giữa chừng.
+
+## Quyết định
+Mọi sự kiện đi qua bảng `outbox`, relay riêng đẩy lên Kafka.
+
+## Hệ quả
+- Consumer phải idempotent (có thể nhận trùng).
+- KHÔNG gọi `producer.send()` trực tiếp trong request handler.
+```
+
+Dòng cuối của ADR này chính là thứ ngăn agent "tối ưu" code bằng cách gửi Kafka trực tiếp cho gọn.
+
+### Tầng 3: code, test, type
+
+Đây là nguồn sự thật cuối cùng, và agent tự đọc được bằng grep hoặc LSP. Đừng chép code vào doc, vì bản chép sẽ lỗi thời. Doc nên **trỏ tới** code: "xem `OrderService.place()` làm ví dụ chuẩn".
+
+<Callout type="tip" title="Progressive disclosure">
+Tầng trên chỉ cần đủ để agent **biết tầng dưới tồn tại và nằm ở đâu**. Agent sẽ tự mở khi task cần. Đây cũng là cách một kỹ sư mới vào team làm quen với codebase: đọc tổng quan trước, đi sâu khi cần.
+</Callout>
+
+## Agent dùng knowledge base như thế nào
+
+<Figure caption="Doc tốt giúp agent đi thẳng tới đúng chỗ; cập nhật doc sau mỗi thay đổi hành vi giữ cho vòng lặp này luôn đúng.">
+  <KbFlow />
+</Figure>
+
+### Grep hay vector search?
+
+Với **code**, tìm kiếm chính xác (grep, ripgrep, LSP "go to definition") thường tốt hơn embedding: tên hàm là định danh chính xác, không cần "gần nghĩa". Vector search hữu ích hơn với **tài liệu văn xuôi** lớn (wiki, ticket cũ, tài liệu nghiệp vụ) khi người hỏi không biết từ khóa chính xác. Nhiều hệ thống dùng cả hai (hybrid retrieval).
+
+## Giữ knowledge base không lỗi thời
+
+Doc sai còn tệ hơn không có doc, vì agent tin tuyệt đối vào những gì nó đọc. Vài cách giữ doc sống:
+
+- **Doc nằm cạnh code**, cùng repo, cùng pull request. Sửa hành vi thì sửa doc trong cùng PR.
+- **Doc có thể kiểm chứng**: các lệnh trong `AGENTS.md` được chạy thật trong CI, nên lệnh sai thì CI đỏ.
+- **Luật quan trọng thì enforce bằng tool, đừng chỉ ghi ra**. "Không import `web` từ `api`" nên là một rule lint. Doc chỉ cần giải thích *vì sao*.
+- **Yêu cầu agent cập nhật doc** khi nó phát hiện điều chưa được ghi lại, rồi review như review code.
+
+<Callout type="warning" title="Đừng biến AGENTS.md thành bãi rác">
+Mỗi lần agent làm sai lại thêm một dòng "ĐỪNG làm X", sau vài tháng file sẽ đầy các luật mâu thuẫn và lỗi thời. Hãy định kỳ dọn: gộp các luật trùng, xóa luật đã được lint enforce, chuyển chi tiết xuống doc module.
+</Callout>
+
+## Use case
+
+<Callout type="usecase" title="Onboarding agent vào monorepo">
+Entry file liệt kê các package và lệnh. Mỗi package có README riêng. Agent sửa được đúng package mà không phải đọc toàn bộ repo.
+</Callout>
+
+<Callout type="usecase" title="Agent trả lời câu hỏi nghiệp vụ">
+Tài liệu nghiệp vụ (luật khuyến mãi, quy trình) được chia nhỏ theo chủ đề, mỗi phần có tiêu đề rõ ràng, tìm bằng hybrid search. Agent trích dẫn nguồn để người dùng kiểm chứng.
+</Callout>
+
+<Callout type="usecase" title="Code review tự động">
+Agent review đọc ADR và quy ước của module bị sửa, nên nhận xét theo đúng chuẩn của team thay vì theo "best practice chung chung".
+</Callout>
+
+## Tóm tắt
+
+- Agent thiếu **tri thức ngầm**, không thiếu khả năng đọc code.
+- Knowledge base **nhiều tầng**: entry file ngắn luôn được nạp, doc module đọc khi cần, code là nguồn sự thật.
+- Doc nằm cạnh code, được kiểm chứng trong CI, và luật quan trọng thì được enforce bằng tool.
+- Đo hiệu quả bằng một bộ task mẫu: agent làm đúng ngay từ đầu được bao nhiêu phần? Xem bài [Đánh giá output của LLM](../llm-eval-harness/).

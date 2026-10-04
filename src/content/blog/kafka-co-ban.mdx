@@ -1,0 +1,187 @@
+---
+title: 'Kafka từ con số 0: topic, partition, consumer group và offset'
+description: Bốn khái niệm đủ để hiểu 80% cách Kafka hoạt động — kèm hình minh họa, cách dựng Kafka local bằng một lệnh Docker và code producer/consumer bằng Python.
+pubDate: 2026-10-04T08:00:00+07:00
+tags: [kafka, distributed-systems, backend]
+---
+
+import Figure from '@/components/blog/Figure.astro';
+import Callout from '@/components/blog/Callout.astro';
+import KafkaTopic from '@/components/diagrams/KafkaTopic.astro';
+import KafkaGroups from '@/components/diagrams/KafkaGroups.astro';
+
+Kafka thường được giới thiệu là "message queue", nhưng gọi vậy dễ gây hiểu lầm. Chính xác hơn, Kafka là một **commit log phân tán**: message được ghi nối vào cuối và **không bị xóa khi đọc**. Hiểu được điều này thì phần lớn hành vi của Kafka trở nên dễ đoán.
+
+Bài này đi qua bốn khái niệm cốt lõi, sau đó dựng Kafka trên máy và viết producer, consumer đầu tiên.
+
+## Vì sao cần Kafka?
+
+Giả sử service *Đặt hàng* mỗi khi có đơn mới phải gọi trực tiếp *Thanh toán*, *Email*, *Kho*, *Phân tích*. Mỗi service thêm vào là thêm một dependency, và chỉ cần một service chết là luồng đặt hàng có thể chết theo.
+
+Với Kafka, *Đặt hàng* chỉ cần ghi một sự kiện `OrderPlaced` vào topic `orders`. Service nào quan tâm thì tự đọc. Bên ghi không cần biết bên đọc là ai, và bên đọc có thể tạm chậm hoặc chết mà không ảnh hưởng bên ghi.
+
+## Bốn khái niệm cốt lõi
+
+<Figure caption="Producer ghi vào các partition của topic; mỗi consumer trong group phụ trách một phần partition và đọc theo offset.">
+  <KafkaTopic />
+</Figure>
+
+<Callout type="concept" title="Topic">
+Một luồng sự kiện có tên, ví dụ `orders`, `payments`. Tương tự một bảng, nhưng chỉ cho phép **ghi thêm vào cuối**. Message được giữ lại theo thời gian (ví dụ 7 ngày) hoặc theo dung lượng, dù đã có ai đọc hay chưa.
+</Callout>
+
+<Callout type="concept" title="Partition">
+Mỗi topic được chia thành nhiều partition, và đây là **đơn vị song song**. Mỗi partition là một log có thứ tự riêng. Kafka chỉ đảm bảo thứ tự **trong một partition**, không đảm bảo thứ tự giữa các partition.
+</Callout>
+
+<Callout type="concept" title="Offset">
+Vị trí của một message trong partition: 0, 1, 2… Consumer tự nhớ (commit) offset mình đã xử lý tới đâu. Muốn đọc lại thì chỉ cần lùi offset, đây là thứ một queue truyền thống không làm được.
+</Callout>
+
+<Callout type="concept" title="Consumer group">
+Một nhóm consumer cùng `group.id` chia nhau các partition. **Mỗi partition chỉ được giao cho một consumer trong group**, nhờ đó các consumer xử lý song song mà không trùng nhau.
+</Callout>
+
+### Key quyết định partition và thứ tự
+
+Khi gửi message kèm **key**, Kafka băm key để chọn partition. Mọi message cùng key luôn rơi vào cùng một partition, nên **giữ đúng thứ tự** với nhau.
+
+Ví dụ: dùng `order_id` làm key thì các sự kiện `Created → Paid → Shipped` của **cùng một đơn** luôn được xử lý đúng thứ tự, còn các đơn khác nhau vẫn được xử lý song song.
+
+<Callout type="warning" title="Số consumer lớn hơn số partition thì vô ích">
+Topic có 3 partition mà group có 5 consumer thì 2 consumer sẽ ngồi chơi. Số partition là trần của độ song song, nên chọn số partition với dư địa cho tương lai. Tăng partition về sau được, nhưng sẽ làm thay đổi cách key được phân bổ, tức là phá thứ tự theo key trong lúc chuyển đổi.
+</Callout>
+
+### Nhiều group đọc cùng một topic
+
+Đây là điểm khác lớn nhất so với queue thông thường:
+
+<Figure caption="Mỗi consumer group nhận ĐỦ mọi message và giữ offset riêng; bên trong một group thì các consumer chia nhau partition.">
+  <KafkaGroups />
+</Figure>
+
+- Trong **một group**, các consumer *chia nhau* công việc, giống mô hình queue.
+- **Khác group** thì mỗi group nhận *toàn bộ* message, giống mô hình pub/sub.
+
+Muốn thêm một service mới đọc sự kiện đơn hàng, ví dụ *Phát hiện gian lận*, bạn chỉ cần tạo group mới. Không phải sửa gì ở producer, và group mới còn có thể đọc lại dữ liệu cũ từ offset 0.
+
+## Thực hành: Kafka trên máy trong một phút
+
+Từ Kafka 4.0 không còn cần ZooKeeper (chạy chế độ **KRaft**), nên dựng thử rất nhẹ:
+
+```bash
+docker run -d --name kafka -p 9092:9092 apache/kafka:4.0.0
+```
+
+Tạo topic `orders` với 3 partition:
+
+```bash
+docker exec kafka /opt/kafka/bin/kafka-topics.sh \
+  --bootstrap-server localhost:9092 \
+  --create --topic orders --partitions 3 --replication-factor 1
+```
+
+### Producer
+
+Dùng thư viện `confluent-kafka` (`pip install confluent-kafka`):
+
+```python
+import json
+from confluent_kafka import Producer
+
+producer = Producer({
+    "bootstrap.servers": "localhost:9092",
+    "acks": "all",                 # chờ mọi replica đồng bộ xác nhận
+    "enable.idempotence": True,    # retry không sinh bản ghi trùng
+})
+
+def on_delivery(err, msg):
+    if err:
+        print("Gửi lỗi:", err)
+    else:
+        print(f"OK → partition {msg.partition()} offset {msg.offset()}")
+
+for order_id, status in [("A1", "created"), ("B7", "created"), ("A1", "paid")]:
+    producer.produce(
+        "orders",
+        key=order_id,                                   # cùng key → cùng partition → đúng thứ tự
+        value=json.dumps({"order_id": order_id, "status": status}),
+        on_delivery=on_delivery,
+    )
+
+producer.flush()  # đợi mọi message được xác nhận
+```
+
+Chạy thử bạn sẽ thấy hai message của `A1` luôn nằm cùng một partition.
+
+### Consumer
+
+```python
+import json
+from confluent_kafka import Consumer
+
+consumer = Consumer({
+    "bootstrap.servers": "localhost:9092",
+    "group.id": "billing",
+    "auto.offset.reset": "earliest",   # group mới: đọc từ đầu
+    "enable.auto.commit": False,       # tự commit sau khi xử lý xong
+})
+consumer.subscribe(["orders"])
+
+try:
+    while True:
+        msg = consumer.poll(1.0)
+        if msg is None:
+            continue
+        if msg.error():
+            print("Lỗi:", msg.error())
+            continue
+
+        order = json.loads(msg.value())
+        print(f"[P{msg.partition()} @{msg.offset()}] {order}")
+        # ... xử lý nghiệp vụ ...
+
+        consumer.commit(message=msg, asynchronous=False)  # chỉ commit khi đã xử lý xong
+finally:
+    consumer.close()
+```
+
+Mở hai terminal cùng chạy consumer này, Kafka sẽ tự **rebalance** và chia 3 partition cho 2 consumer. Tắt một consumer thì consumer còn lại nhận hết partition.
+
+<Callout type="tip" title="Vì sao tắt auto commit?">
+Với auto commit, Kafka có thể commit offset **trước khi** bạn xử lý xong. Nếu app crash đúng lúc đó, message bị mất. Commit thủ công sau khi xử lý sẽ cho bạn đảm bảo *at-least-once*: không mất, nhưng có thể nhận trùng. Cách xử lý trùng lặp nằm trong bài [Outbox và idempotent consumer](../kafka-outbox-idempotent-consumer/).
+</Callout>
+
+## Use case
+
+<Callout type="usecase" title="Event-driven microservices">
+Service phát sự kiện nghiệp vụ (`OrderPlaced`, `PaymentFailed`), các service khác tự phản ứng. Giảm phụ thuộc trực tiếp, và từng service có thể chết tạm thời mà không kéo cả hệ thống theo.
+</Callout>
+
+<Callout type="usecase" title="Thu thập log, clickstream, metrics">
+Hàng triệu sự kiện mỗi giây từ app và web được đổ vào Kafka, rồi chuyển sang data warehouse, hệ thống tìm kiếm hoặc dashboard real-time.
+</Callout>
+
+<Callout type="usecase" title="Change Data Capture (CDC)">
+Công cụ như Debezium đọc log thay đổi của database (Postgres WAL, MySQL binlog) và đẩy mỗi thay đổi thành một sự kiện. Từ đó đồng bộ sang cache, search index hoặc service khác mà không phải sửa code ghi dữ liệu.
+</Callout>
+
+<Callout type="usecase" title="Đọc lại lịch sử (replay)">
+Phát hiện bug trong consumer tính điểm thưởng? Sửa bug, reset offset về thời điểm trước khi lỗi xảy ra rồi xử lý lại. Dữ liệu vẫn còn trong Kafka trong thời gian retention.
+</Callout>
+
+## Khi nào *không* nên dùng Kafka?
+
+- Lưu lượng nhỏ và chỉ cần một hàng đợi job đơn giản: Redis, RabbitMQ hoặc một bảng `jobs` trong Postgres sẽ đơn giản hơn nhiều.
+- Cần request/response đồng bộ ("trả lời tôi ngay"): dùng HTTP hoặc gRPC.
+- Cần thứ tự tuyệt đối trên toàn bộ dữ liệu: Kafka chỉ đảm bảo thứ tự theo partition.
+
+## Tóm tắt
+
+| Khái niệm | Một câu |
+| --- | --- |
+| Topic | Luồng sự kiện có tên, chỉ ghi nối, giữ theo retention |
+| Partition | Đơn vị song song và đơn vị đảm bảo thứ tự |
+| Key | Quyết định partition; cùng key thì cùng thứ tự |
+| Offset | Vị trí trong partition; consumer tự commit |
+| Consumer group | Chia partition trong group; khác group thì mỗi group nhận đủ |

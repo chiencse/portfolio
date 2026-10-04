@@ -1,0 +1,29 @@
+---
+type Kind = 'concept' | 'usecase' | 'warning' | 'tip' | 'example';
+
+interface Props {
+  type?: Kind;
+  title?: string;
+}
+
+const kinds: Record<Kind, { label: string; color: string }> = {
+  concept: { label: 'Khái niệm', color: 'var(--accent-3)' },
+  usecase: { label: 'Use case', color: 'var(--accent)' },
+  example: { label: 'Ví dụ', color: 'var(--accent-2)' },
+  warning: { label: 'Cạm bẫy', color: '#f59e0b' },
+  tip: { label: 'Mẹo', color: 'var(--accent)' },
+};
+
+const { type = 'concept', title } = Astro.props;
+const kind = kinds[type];
+---
+
+<aside
+  class="callout my-8 rounded-2xl border border-l-4 bg-surface-2/60 px-5 py-4"
+  style={`border-color: var(--line); border-left-color: ${kind.color}`}
+>
+  <p class="!mt-0 !mb-2 font-mono text-xs tracking-wider uppercase" style={`color: ${kind.color}`}>
+    {kind.label}{title && <span class="text-ink normal-case"> · {title}</span>}
+  </p>
+  <slot />
+</aside>

@@ -1,0 +1,40 @@
+<svg viewBox="0 0 720 236" role="img" aria-label="Context đi theo request từ HTTP handler xuống service, database và API ngoài; client ngắt kết nối thì mọi bước dừng">
+  <defs>
+    <marker id="cr-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head-accent"></path>
+    </marker>
+    <marker id="cr-arrow-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head-warn"></path>
+    </marker>
+  </defs>
+
+  <rect x="12" y="62" width="112" height="56" rx="10" class="box"></rect>
+  <text x="68" y="86" text-anchor="middle" class="t">Client</text>
+  <text x="68" y="105" text-anchor="middle" class="s">trình duyệt</text>
+
+  <rect x="160" y="62" width="150" height="56" rx="10" class="box-info"></rect>
+  <text x="235" y="86" text-anchor="middle" class="t">Handler</text>
+  <text x="235" y="105" text-anchor="middle" class="s mono">r.Context()</text>
+
+  <rect x="346" y="62" width="140" height="56" rx="10" class="box-accent"></rect>
+  <text x="416" y="86" text-anchor="middle" class="t">Service</text>
+  <text x="416" y="105" text-anchor="middle" class="s mono">PlaceOrder(ctx, …)</text>
+
+  <rect x="526" y="14" width="182" height="52" rx="10" class="box-alt"></rect>
+  <text x="617" y="36" text-anchor="middle" class="t">PostgreSQL</text>
+  <text x="617" y="54" text-anchor="middle" class="s mono">QueryContext(ctx, …)</text>
+
+  <rect x="526" y="112" width="182" height="52" rx="10" class="box-alt"></rect>
+  <text x="617" y="134" text-anchor="middle" class="t">API thanh toán</text>
+  <text x="617" y="152" text-anchor="middle" class="s mono">NewRequestWithContext</text>
+
+  <line x1="124" y1="90" x2="158" y2="90" class="edge-accent" marker-end="url(#cr-arrow)"></line>
+  <line x1="310" y1="90" x2="344" y2="90" class="edge-accent" marker-end="url(#cr-arrow)"></line>
+  <line x1="486" y1="80" x2="524" y2="44" class="edge-accent" marker-end="url(#cr-arrow)"></line>
+  <line x1="486" y1="100" x2="524" y2="134" class="edge-accent" marker-end="url(#cr-arrow)"></line>
+  <text x="141" y="82" text-anchor="middle" class="s mono">ctx</text>
+  <text x="327" y="82" text-anchor="middle" class="s mono">ctx</text>
+
+  <path d="M68,118 V196 H617 V168" class="edge-warn dashed flow" marker-end="url(#cr-arrow-warn)"></path>
+  <text x="350" y="222" text-anchor="middle" class="s fill-warn">client đóng tab → ctx bị hủy → query và request đang chạy đều dừng, không tốn tài nguyên vô ích</text>
+</svg>

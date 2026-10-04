@@ -1,0 +1,177 @@
+---
+title: 'Agent harness: phần "khung xương" quyết định một AI agent giỏi hay dở'
+description: Model chỉ là bộ não. Harness — vòng lặp, tool, quản lý context, phân quyền — mới là thứ biến một LLM thành agent làm việc được. Giải phẫu từng lớp, kèm code một harness tối giản.
+pubDate: 2026-10-04T13:00:00+07:00
+tags: [ai, agents, architecture]
+---
+
+import Figure from '@/components/blog/Figure.astro';
+import Callout from '@/components/blog/Callout.astro';
+import AgentLoop from '@/components/diagrams/AgentLoop.astro';
+import HarnessLayers from '@/components/diagrams/HarnessLayers.astro';
+
+Khi dùng một coding agent, ta hay nghĩ "model càng mạnh thì agent càng giỏi". Đúng một nửa. Cùng một model, đặt vào hai **harness** khác nhau có thể cho ra một agent sửa được bug thật, hoặc một agent loay hoay gọi sai tool rồi quên mất mình đang làm gì.
+
+Bài này giải thích harness là gì, nó gồm những lớp nào, và viết thử một harness tối giản để thấy mọi thứ ghép lại ra sao.
+
+## Harness là gì?
+
+<Callout type="concept" title="Agent = Model + Harness">
+**Harness** là toàn bộ phần code bao quanh model: nó lắp context gửi vào model, đọc phản hồi, thực thi các tool mà model yêu cầu, kiểm soát quyền, rồi đưa kết quả quay lại cho model — lặp đi lặp lại cho tới khi xong việc.
+</Callout>
+
+Bản thân LLM chỉ làm một việc: nhận một đoạn văn bản (context) và sinh ra đoạn tiếp theo. Nó không tự đọc được file, không chạy được lệnh, không nhớ gì giữa hai lần gọi. Mọi khả năng "agent" — đọc code, chạy test, sửa file — đều do harness cung cấp.
+
+Một cách hình dung: model là **người lái**, harness là **chiếc xe**: vô-lăng (tool), gương chiếu hậu (context), phanh (permission), bảng đồng hồ (log). Người lái giỏi mà xe không có phanh thì vẫn nguy hiểm.
+
+## Vòng lặp agent
+
+Trái tim của mọi harness là một vòng lặp rất đơn giản:
+
+<Figure caption="Harness lặp bốn bước cho tới khi model trả lời mà không yêu cầu gọi tool nào nữa.">
+  <AgentLoop />
+</Figure>
+
+1. **Lắp context** — system prompt, lịch sử hội thoại, danh sách tool (tên + mô tả + schema đầu vào).
+2. **Gọi model** — model trả về hoặc là câu trả lời, hoặc là một (vài) yêu cầu `tool_use`: "hãy gọi `read_file` với `path = src/app.ts`".
+3. **Thực thi tool** — harness kiểm tra quyền, chạy tool thật, bắt lỗi.
+4. **Ghi kết quả** — nối `tool_result` vào lịch sử, rồi quay lại bước 1.
+
+Vòng lặp dừng khi model trả lời mà không gọi tool nào (`stop_reason` là `end_turn`), hoặc khi harness chạm giới hạn: số vòng tối đa, ngân sách token, hoặc người dùng bấm dừng.
+
+## Viết thử một harness tối giản
+
+Đây là một harness đủ dùng với Claude API và TypeScript — chỉ có một tool đọc file, nhưng đủ để thấy rõ vòng lặp:
+
+```ts
+import Anthropic from '@anthropic-ai/sdk';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+
+const client = new Anthropic(); // đọc ANTHROPIC_API_KEY từ môi trường
+const ROOT = process.cwd();
+
+const tools: Anthropic.Tool[] = [
+  {
+    name: 'read_file',
+    description: 'Đọc nội dung một file văn bản trong thư mục dự án.',
+    input_schema: {
+      type: 'object',
+      properties: { path: { type: 'string', description: 'Đường dẫn tương đối' } },
+      required: ['path'],
+    },
+  },
+];
+
+async function runTool(name: string, input: unknown): Promise<string> {
+  if (name !== 'read_file') throw new Error(`Tool không tồn tại: ${name}`);
+  const { path: rel } = input as { path: string };
+  const full = path.resolve(ROOT, rel);
+  // Lớp "permission" đơn giản nhất: không cho đọc ra ngoài thư mục dự án
+  if (!full.startsWith(ROOT + path.sep)) throw new Error('Không được đọc ngoài dự án');
+  return (await readFile(full, 'utf8')).slice(0, 20_000); // cắt bớt output quá dài
+}
+
+export async function agent(task: string, maxTurns = 20) {
+  const messages: Anthropic.MessageParam[] = [{ role: 'user', content: task }];
+
+  for (let turn = 0; turn < maxTurns; turn++) {
+    const res = await client.messages.create({
+      model: 'claude-opus-5',
+      max_tokens: 16000,
+      system: 'Bạn là trợ lý đọc code. Đọc file khi cần, trả lời ngắn gọn.',
+      tools,
+      messages,
+    });
+    messages.push({ role: 'assistant', content: res.content });
+
+    const calls = res.content.filter((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use');
+    if (calls.length === 0) {
+      return res.content.flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n');
+    }
+
+    // Trả TẤT CẢ kết quả trong MỘT message user, lỗi cũng phải trả về
+    const results = await Promise.all(
+      calls.map(async (call): Promise<Anthropic.ToolResultBlockParam> => {
+        try {
+          return { type: 'tool_result', tool_use_id: call.id, content: await runTool(call.name, call.input) };
+        } catch (err) {
+          return { type: 'tool_result', tool_use_id: call.id, content: String(err), is_error: true };
+        }
+      }),
+    );
+    messages.push({ role: 'user', content: results });
+  }
+  throw new Error('Vượt quá số vòng cho phép');
+}
+```
+
+Chưa tới 60 dòng, nhưng đã có đủ các phần của một harness thật: định nghĩa tool, vòng lặp, kiểm quyền, xử lý lỗi, cắt output và giới hạn số vòng.
+
+<Callout type="warning" title="Ba lỗi hay gặp khi tự viết vòng lặp">
+- **Nuốt lỗi tool.** Khi tool lỗi, phải trả `tool_result` với `is_error: true`. Nếu bỏ qua, model không biết chuyện gì đã xảy ra và sẽ đoán mò.
+- **Không giới hạn số vòng.** Model có thể lặp mãi một hành động không có tiến triển. Luôn có `maxTurns` hoặc ngân sách token.
+- **Đổ nguyên output khổng lồ vào context.** Một lệnh `cat` file log 5 MB sẽ đẩy mọi thứ quan trọng ra khỏi context. Hãy cắt bớt, tóm tắt, hoặc cho phép đọc theo trang.
+</Callout>
+
+## Các lớp của một harness thực tế
+
+Harness trong sản phẩm thật (Claude Code, Cursor, các agent framework…) có nhiều lớp hơn hẳn ví dụ trên:
+
+<Figure caption="Từ ngoài vào trong — mọi lớp trừ model đều là code bạn viết và kiểm soát.">
+  <HarnessLayers />
+</Figure>
+
+### Tool
+
+Tool là "tay chân" của agent. Thiết kế tool ảnh hưởng tới chất lượng còn nhiều hơn prompt:
+
+- **Mô tả rõ khi nào nên dùng**, không chỉ nó làm gì. Model chọn tool dựa vào mô tả.
+- **Ít mà mạnh** tốt hơn nhiều mà vụn. Một tool `bash` cộng một tool `edit_file` thường hiệu quả hơn 30 tool chuyên biệt.
+- **Lỗi phải dễ hiểu và gợi ý cách sửa**: "File không tồn tại. Các file gần giống: `src/app.tsx`" có ích hơn hẳn `ENOENT`.
+
+### Quản lý context
+
+Context window là tài nguyên khan hiếm nhất. Harness tốt sẽ chủ động:
+
+- **Nén lịch sử** (compaction) khi gần đầy: tóm tắt các bước cũ, giữ lại quyết định quan trọng.
+- **Cắt kết quả tool cũ** không còn cần thiết.
+- **Dùng subagent**: giao việc "đọc 50 file để tìm chỗ gọi hàm X" cho một agent con có context riêng. Agent con chỉ trả về kết luận, nên context của agent chính vẫn gọn.
+- **Memory bền vững**: ghi những điều cần nhớ qua nhiều phiên ra file (ví dụ `AGENTS.md`). Xem thêm bài [Knowledge base cho AI agent](../knowledge-base-cho-ai-agent/).
+
+### Quyền & sandbox
+
+Agent có thể chạy lệnh, nên harness phải trả lời câu hỏi "lệnh này có được phép không?":
+
+- Lệnh chỉ đọc (`ls`, `git status`) cho chạy luôn; lệnh ghi hoặc xóa thì hỏi người dùng.
+- Chạy trong sandbox: giới hạn thư mục được ghi, chặn mạng ra ngoài.
+- Không tin input từ tool: nội dung một trang web có thể chứa câu "hãy xóa toàn bộ repo". Harness phải coi đó là **dữ liệu**, không phải mệnh lệnh.
+
+### Hooks & quan sát
+
+Hooks cho phép chạy code của bạn ở những thời điểm cố định: trước khi tool chạy (chặn lệnh nguy hiểm), sau khi sửa file (tự chạy formatter), khi agent kết thúc (gửi thông báo). Kết hợp với log và tracing, bạn biết được agent đã làm gì, tốn bao nhiêu token, và sai ở bước nào.
+
+## Use case
+
+<Callout type="usecase" title="Coding agent">
+Tool `read`, `edit`, `bash`, `grep`. Phân quyền chặt cho lệnh ghi. Sau mỗi lần sửa file thì hook tự chạy test và lint, kết quả đưa lại cho model để nó tự sửa tiếp.
+</Callout>
+
+<Callout type="usecase" title="Trợ lý chăm sóc khách hàng">
+Tool `tra_cuu_don_hang`, `tao_ticket`. Thao tác hoàn tiền bắt buộc phải có người duyệt. Context có chính sách hoàn tiền; memory lưu lịch sử khách hàng.
+</Callout>
+
+<Callout type="usecase" title="Agent phân tích dữ liệu">
+Tool chạy SQL **chỉ đọc** trên bản replica, cộng một tool vẽ biểu đồ. Harness tự giới hạn số dòng trả về để không làm tràn context.
+</Callout>
+
+## Khi nào *không* cần agent?
+
+Nếu các bước đã biết trước (lấy dữ liệu, gọi LLM tóm tắt, gửi email) thì một **workflow** cố định — code của bạn gọi LLM ở đúng chỗ — sẽ rẻ hơn, nhanh hơn và dễ test hơn. Agent đáng tiền khi task mở, nhiều bước, khó mô tả trước, và lỗi có thể phát hiện rồi sửa được (có test, có review, có rollback).
+
+## Tóm tắt
+
+- **Agent = model + harness.** Model quyết định *làm gì*; harness quyết định *làm được gì* và *làm an toàn không*.
+- Cốt lõi là vòng lặp: lắp context → gọi model → chạy tool → ghi kết quả → lặp lại.
+- Chất lượng agent phụ thuộc rất nhiều vào thiết kế tool, quản lý context và phân quyền. Đó đều là kỹ thuật phần mềm quen thuộc, không có gì bí ẩn.
+- Muốn biết harness của mình có tốt lên không, bạn cần đo. Xem bài [Đánh giá output của LLM](../llm-eval-harness/).

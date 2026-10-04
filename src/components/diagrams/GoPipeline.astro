@@ -1,0 +1,41 @@
+<svg viewBox="0 0 720 220" role="img" aria-label="Pipeline nhiều stage nối bằng channel có giới hạn, stage giữa fan-out ra nhiều goroutine, channel đầy tạo backpressure">
+  <defs>
+    <marker id="gp-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head-accent"></path>
+    </marker>
+    <marker id="gp-arrow-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head-warn"></path>
+    </marker>
+  </defs>
+
+  <rect x="12" y="62" width="120" height="56" rx="10" class="box-info"></rect>
+  <text x="72" y="86" text-anchor="middle" class="t">Đọc file</text>
+  <text x="72" y="105" text-anchor="middle" class="s">1 goroutine</text>
+
+  <rect x="196" y="62" width="120" height="56" rx="10" class="box-info"></rect>
+  <text x="256" y="86" text-anchor="middle" class="t">Parse</text>
+  <text x="256" y="105" text-anchor="middle" class="s">1 goroutine</text>
+
+  <rect x="380" y="18" width="140" height="144" rx="12" class="box-ghost"></rect>
+  <text x="450" y="38" text-anchor="middle" class="s mono fill-alt">fan-out × 3</text>
+  <rect x="396" y="48" width="108" height="30" rx="8" class="box-alt"></rect>
+  <text x="450" y="68" text-anchor="middle" class="c">Gọi API</text>
+  <rect x="396" y="86" width="108" height="30" rx="8" class="box-alt"></rect>
+  <text x="450" y="106" text-anchor="middle" class="c">Gọi API</text>
+  <rect x="396" y="124" width="108" height="30" rx="8" class="box-alt"></rect>
+  <text x="450" y="144" text-anchor="middle" class="c">Gọi API</text>
+
+  <rect x="584" y="62" width="124" height="56" rx="10" class="box-accent"></rect>
+  <text x="646" y="86" text-anchor="middle" class="t">Ghi DB</text>
+  <text x="646" y="105" text-anchor="middle" class="s">fan-in · theo lô</text>
+
+  <line x1="132" y1="90" x2="194" y2="90" class="edge-accent flow" marker-end="url(#gp-arrow)"></line>
+  <line x1="316" y1="90" x2="378" y2="90" class="edge-accent flow" marker-end="url(#gp-arrow)"></line>
+  <line x1="520" y1="90" x2="582" y2="90" class="edge-accent flow" marker-end="url(#gp-arrow)"></line>
+  <text x="164" y="80" text-anchor="middle" class="s mono">cap 100</text>
+  <text x="347" y="80" text-anchor="middle" class="s mono">cap 100</text>
+  <text x="551" y="80" text-anchor="middle" class="s mono">cap 100</text>
+
+  <path d="M646,118 V184 H72 V122" class="edge-warn dashed" marker-end="url(#gp-arrow-warn)"></path>
+  <text x="360" y="206" text-anchor="middle" class="s fill-warn">DB chậm → channel đầy → các stage trước tự chờ (backpressure), RAM không phình</text>
+</svg>

@@ -1,0 +1,53 @@
+<svg viewBox="0 0 720 290" role="img" aria-label="Transactional outbox: ghi đơn hàng và sự kiện trong cùng một transaction, relay đẩy lên Kafka, consumer khử trùng lặp">
+  <defs>
+    <marker id="ob-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head"></path>
+    </marker>
+    <marker id="ob-arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head-accent"></path>
+    </marker>
+  </defs>
+
+  <!-- Service -->
+  <rect x="16" y="112" width="132" height="60" rx="12" class="box-info"></rect>
+  <text x="82" y="137" text-anchor="middle" class="t">Order API</text>
+  <text x="82" y="156" text-anchor="middle" class="s">POST /orders</text>
+
+  <!-- DB transaction -->
+  <rect x="180" y="34" width="204" height="210" rx="16" class="box-ghost"></rect>
+  <text x="196" y="56" class="s mono fill-accent">1 DB transaction</text>
+  <rect x="200" y="72" width="164" height="56" rx="10" class="box"></rect>
+  <text x="282" y="95" text-anchor="middle" class="t mono">orders</text>
+  <text x="282" y="114" text-anchor="middle" class="s">INSERT đơn hàng</text>
+  <rect x="200" y="156" width="164" height="56" rx="10" class="box-accent"></rect>
+  <text x="282" y="179" text-anchor="middle" class="t mono">outbox</text>
+  <text x="282" y="198" text-anchor="middle" class="s">INSERT sự kiện</text>
+
+  <line x1="148" y1="132" x2="198" y2="104" class="edge" marker-end="url(#ob-arrow)"></line>
+  <line x1="148" y1="152" x2="198" y2="182" class="edge" marker-end="url(#ob-arrow)"></line>
+
+  <!-- Relay -->
+  <rect x="414" y="156" width="124" height="56" rx="10" class="box-alt"></rect>
+  <text x="476" y="179" text-anchor="middle" class="t">Relay</text>
+  <text x="476" y="198" text-anchor="middle" class="s">poll hoặc CDC</text>
+  <line x1="364" y1="184" x2="412" y2="184" class="edge-accent flow" marker-end="url(#ob-arrow-accent)"></line>
+
+  <!-- Kafka -->
+  <rect x="414" y="60" width="124" height="56" rx="10" class="box-info"></rect>
+  <text x="476" y="83" text-anchor="middle" class="t">Kafka</text>
+  <text x="476" y="102" text-anchor="middle" class="s mono">order-events</text>
+  <line x1="476" y1="156" x2="476" y2="118" class="edge-accent flow" marker-end="url(#ob-arrow-accent)"></line>
+
+  <!-- Consumer -->
+  <rect x="568" y="60" width="140" height="56" rx="10" class="box"></rect>
+  <text x="638" y="83" text-anchor="middle" class="t">Consumer</text>
+  <text x="638" y="102" text-anchor="middle" class="s">gửi email xác nhận</text>
+  <line x1="538" y1="88" x2="566" y2="88" class="edge-accent flow" marker-end="url(#ob-arrow-accent)"></line>
+
+  <rect x="568" y="156" width="140" height="56" rx="10" class="box-accent"></rect>
+  <text x="638" y="179" text-anchor="middle" class="t mono">processed</text>
+  <text x="638" y="198" text-anchor="middle" class="s">id đã thấy → bỏ qua</text>
+  <line x1="638" y1="116" x2="638" y2="154" class="edge" marker-end="url(#ob-arrow)"></line>
+
+  <text x="360" y="276" text-anchor="middle" class="s">Không còn trạng thái “đơn đã lưu nhưng sự kiện bị mất” — và trùng lặp được khử ở phía nhận</text>
+</svg>

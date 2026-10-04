@@ -1,0 +1,29 @@
+<svg viewBox="0 0 720 236" role="img" aria-label="Error được bọc qua nhiều lớp bằng %w; errors.Is đi xuyên các lớp để tìm lỗi gốc">
+  <defs>
+    <marker id="ge-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head-accent"></path>
+    </marker>
+  </defs>
+
+  <rect x="12" y="12" width="440" height="210" rx="14" class="box"></rect>
+  <text x="28" y="36" class="c mono">handler: create order: …</text>
+
+  <rect x="36" y="50" width="392" height="160" rx="12" class="box-info"></rect>
+  <text x="52" y="74" class="c mono">service: reserve stock: …</text>
+
+  <rect x="60" y="88" width="344" height="110" rx="10" class="box-alt"></rect>
+  <text x="76" y="112" class="c mono">repo: get sku 42: …</text>
+
+  <rect x="84" y="128" width="296" height="54" rx="10" class="box-accent"></rect>
+  <text x="232" y="153" text-anchor="middle" class="t mono fill-accent">ErrNotFound</text>
+  <text x="232" y="171" text-anchor="middle" class="s">lỗi gốc (sentinel)</text>
+
+  <text x="486" y="80" class="c mono">errors.Is(err, ErrNotFound)</text>
+  <text x="486" y="104" class="s">Unwrap() từng lớp %w …</text>
+  <text x="486" y="128" class="t mono fill-accent">→ true</text>
+  <text x="486" y="164" class="s">thông điệp đầy đủ:</text>
+  <text x="486" y="184" class="s mono">create order: reserve stock:</text>
+  <text x="486" y="202" class="s mono">get sku 42: not found</text>
+
+  <path d="M480,118 C440,118 420,150 382,155" class="edge-accent flow" marker-end="url(#ge-arrow)"></path>
+</svg>

@@ -1,0 +1,194 @@
+---
+title: 'Interface và error handling trong Go: nhỏ, ngầm định và có ngữ cảnh'
+description: Interface trong Go được thỏa ngầm định và nên khai báo ở phía dùng. Error là giá trị — bọc bằng %w, kiểm tra bằng errors.Is/As. Kèm cạm bẫy kinh điển "nil interface không phải nil".
+pubDate: 2026-10-04T04:00:00+07:00
+tags: [go, backend, architecture]
+---
+
+import Figure from '@/components/blog/Figure.astro';
+import Callout from '@/components/blog/Callout.astro';
+import GoInterfaces from '@/components/diagrams/GoInterfaces.astro';
+import GoErrorChain from '@/components/diagrams/GoErrorChain.astro';
+
+Hai thứ khiến người từ Java, C# hay TypeScript bỡ ngỡ nhất khi sang Go: **interface không cần `implements`**, và **không có exception**, chỉ có `if err != nil`. Cả hai đều là lựa chọn có chủ đích, và khi dùng đúng cách thì code dễ test, dễ đọc hơn hẳn.
+
+## Interface: thỏa mãn ngầm định
+
+<Callout type="concept" title="Implicit interface">
+Một kiểu **tự động** thỏa một interface nếu nó có đủ các method với đúng chữ ký. Không cần khai báo `implements`, và kiểu đó thậm chí không cần biết interface tồn tại.
+</Callout>
+
+```go
+type Notifier interface {
+	Notify(ctx context.Context, msg string) error
+}
+
+type EmailSender struct{ smtp *smtp.Client }
+
+func (e *EmailSender) Notify(ctx context.Context, msg string) error {
+	// ... gửi email
+	return nil
+}
+
+var _ Notifier = (*EmailSender)(nil) // (tùy chọn) bắt lỗi lúc compile nếu không còn thỏa
+```
+
+### Khai báo interface ở phía dùng
+
+Vì thỏa ngầm định, interface nên được khai báo **ở package dùng nó**, và chỉ gồm những method package đó thực sự cần:
+
+<Figure caption="Package order tự định nghĩa thứ nó cần; email, SMS và fake cho test đều thỏa mà không biết order tồn tại.">
+  <GoInterfaces />
+</Figure>
+
+```go
+// package order
+type Notifier interface { // chỉ 1 method — đúng thứ order cần
+	Notify(ctx context.Context, msg string) error
+}
+
+type Service struct {
+	repo   Repository
+	notify Notifier
+}
+
+func NewService(repo Repository, n Notifier) *Service { // "accept interfaces…"
+	return &Service{repo: repo, notify: n}                // "…return structs"
+}
+```
+
+Test thì chỉ cần một fake vài dòng, không cần thư viện mock:
+
+```go
+type fakeNotifier struct{ sent []string }
+
+func (f *fakeNotifier) Notify(_ context.Context, msg string) error {
+	f.sent = append(f.sent, msg)
+	return nil
+}
+
+func TestPlaceOrder_SendsConfirmation(t *testing.T) {
+	n := &fakeNotifier{}
+	svc := order.NewService(newMemRepo(), n)
+	_, err := svc.Place(context.Background(), order.Input{ProductID: "p1", Qty: 1})
+	if err != nil || len(n.sent) != 1 {
+		t.Fatalf("muốn 1 thông báo, có %d (err=%v)", len(n.sent), err)
+	}
+}
+```
+
+<Callout type="tip" title="Interface càng nhỏ càng tốt">
+`io.Reader` chỉ có một method `Read`, nhưng file, kết nối mạng, gzip, buffer, HTTP body đều thỏa nó, và mọi hàm nhận `io.Reader` dùng được với tất cả. *"The bigger the interface, the weaker the abstraction."* Đừng tạo interface 15 method "cho đủ bộ" rồi chỉ có một implementation.
+</Callout>
+
+## Error là giá trị
+
+Go không có `try/catch`. Hàm có thể lỗi thì trả `error` làm giá trị cuối, và bên gọi **phải** quyết định làm gì với nó:
+
+```go
+f, err := os.Open(path)
+if err != nil {
+	return fmt.Errorf("open config %s: %w", path, err)
+}
+defer f.Close()
+```
+
+Viết nhiều hơn exception, nhưng mọi đường lỗi **hiện rõ trong code**. Đọc một hàm là biết nó có thể lỗi ở đâu và lỗi đó đi tiếp về đâu.
+
+### Bọc lỗi để thêm ngữ cảnh
+
+`fmt.Errorf` với `%w` **bọc** lỗi gốc: thêm thông tin của tầng hiện tại mà vẫn giữ lỗi gốc bên trong.
+
+<Figure caption="Mỗi tầng thêm ngữ cảnh; errors.Is đi xuyên các lớp để tìm lỗi gốc.">
+  <GoErrorChain />
+</Figure>
+
+```go
+var ErrNotFound = errors.New("not found") // sentinel error
+
+// repo
+func (r *Repo) GetSKU(ctx context.Context, id int) (SKU, error) {
+	// ...
+	if errors.Is(err, sql.ErrNoRows) {
+		return SKU{}, fmt.Errorf("get sku %d: %w", id, ErrNotFound)
+	}
+}
+
+// service
+if err != nil {
+	return fmt.Errorf("reserve stock: %w", err)
+}
+
+// handler
+switch {
+case errors.Is(err, ErrNotFound):
+	http.Error(w, "không tìm thấy sản phẩm", http.StatusNotFound)
+case err != nil:
+	log.Printf("create order: %v", err) // "create order: reserve stock: get sku 42: not found"
+	http.Error(w, "lỗi hệ thống", http.StatusInternalServerError)
+}
+```
+
+Log ra một dòng là đọc được cả đường đi của lỗi, không cần stack trace.
+
+### `errors.Is` và `errors.As`
+
+- `errors.Is(err, target)`: trong chuỗi lỗi có **giá trị** `target` không? Dùng với sentinel error như `ErrNotFound`, `io.EOF`, `context.DeadlineExceeded`.
+- `errors.As(err, &target)`: trong chuỗi lỗi có lỗi nào **thuộc kiểu** này không? Nếu có thì lấy nó ra để đọc thêm thông tin.
+
+```go
+type ValidationError struct {
+	Field  string
+	Reason string
+}
+
+func (e *ValidationError) Error() string { return e.Field + ": " + e.Reason }
+
+var ve *ValidationError
+if errors.As(err, &ve) {
+	writeJSON(w, http.StatusBadRequest, map[string]string{"field": ve.Field, "error": ve.Reason})
+	return
+}
+```
+
+`errors.Join(err1, err2)` (Go 1.20) gom nhiều lỗi thành một, và `errors.Is`/`As` vẫn tìm được từng lỗi bên trong.
+
+<Callout type="warning" title="Cạm bẫy: nil interface không phải nil">
+```go
+func validate(o Order) error {
+	var ve *ValidationError // nil pointer
+	if o.Qty <= 0 {
+		ve = &ValidationError{"qty", "phải > 0"}
+	}
+	return ve // ❌ luôn trả về error KHÁC nil!
+}
+```
+Một giá trị interface gồm **(kiểu, giá trị)**. Trả về `ve` kiểu `*ValidationError` có giá trị nil cho ra interface `(*ValidationError, nil)`, và interface đó **khác** `nil`. Hãy `return nil` một cách tường minh ở nhánh không lỗi.
+</Callout>
+
+### Vài quy tắc thực tế
+
+- **Mỗi lỗi chỉ xử lý một lần**: hoặc log, hoặc trả lên trên, đừng làm cả hai. Log ở mọi tầng sẽ cho ra năm dòng log cho cùng một lỗi.
+- **Thông điệp viết thường, không chấm câu, mô tả việc đang làm**: `"reserve stock: %w"`, không phải `"Error: failed to reserve stock!"`.
+- `%w` khi muốn bên gọi kiểm tra được lỗi gốc; `%v` khi muốn **giấu** chi tiết cài đặt, ví dụ không để lộ lỗi của driver database ra ngoài API của package.
+- `panic` chỉ dành cho lỗi lập trình không thể tiếp tục (bất biến bị vi phạm), **không** dùng cho lỗi dự kiến như input sai hay mạng lỗi.
+
+## Use case
+
+<Callout type="usecase" title="Đổi nhà cung cấp mà không sửa nghiệp vụ">
+`order` phụ thuộc vào interface `Notifier`. Chuyển từ email sang push notification chỉ cần một struct mới và một dòng sửa trong `main`.
+</Callout>
+
+<Callout type="usecase" title="Map lỗi nghiệp vụ sang HTTP status">
+Repo trả `ErrNotFound`, service bọc thêm ngữ cảnh, handler dùng `errors.Is`/`As` để chọn 404, 400 hay 500. Tầng nghiệp vụ không cần biết gì về HTTP.
+</Callout>
+
+<Callout type="usecase" title="Retry có chọn lọc">
+`errors.Is(err, context.DeadlineExceeded)` hoặc `errors.As` ra lỗi mạng tạm thời thì retry. Lỗi validation thì không retry.
+</Callout>
+
+## Tóm tắt
+
+- Interface **nhỏ**, thỏa **ngầm định**, khai báo **ở phía dùng**. "Accept interfaces, return structs."
+- Error là giá trị: bọc bằng `%w` để thêm ngữ cảnh, kiểm tra bằng `errors.Is`/`errors.As`.
+- Cẩn thận với typed nil trong interface, và mỗi lỗi chỉ xử lý (log hoặc trả về) một lần.

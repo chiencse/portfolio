@@ -1,0 +1,64 @@
+<svg viewBox="0 0 720 350" role="img" aria-label="Vòng lặp agent: harness lắp context, gọi model, thực thi tool, ghi kết quả rồi lặp lại">
+  <defs>
+    <marker id="al-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head"></path>
+    </marker>
+    <marker id="al-arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head-accent"></path>
+    </marker>
+  </defs>
+
+  <!-- User -->
+  <rect x="16" y="150" width="124" height="60" rx="12" class="box"></rect>
+  <text x="78" y="175" text-anchor="middle" class="t">Người dùng</text>
+  <text x="78" y="195" text-anchor="middle" class="s">giao task</text>
+  <line x1="140" y1="180" x2="176" y2="180" class="edge" marker-end="url(#al-arrow)"></line>
+
+  <!-- Harness -->
+  <rect x="180" y="16" width="350" height="318" rx="16" class="box-ghost"></rect>
+  <text x="196" y="40" class="s mono fill-accent">HARNESS</text>
+
+  <rect x="210" y="56" width="300" height="52" rx="10" class="box-info"></rect>
+  <text x="360" y="78" text-anchor="middle" class="t">① Lắp context</text>
+  <text x="360" y="97" text-anchor="middle" class="s">system prompt · lịch sử · danh sách tool</text>
+
+  <rect x="210" y="126" width="300" height="52" rx="10" class="box-accent"></rect>
+  <text x="360" y="148" text-anchor="middle" class="t">② Gọi model</text>
+  <text x="360" y="167" text-anchor="middle" class="s">nhận lại text hoặc yêu cầu gọi tool</text>
+
+  <rect x="210" y="196" width="300" height="52" rx="10" class="box-alt"></rect>
+  <text x="360" y="218" text-anchor="middle" class="t">③ Thực thi tool</text>
+  <text x="360" y="237" text-anchor="middle" class="s">kiểm quyền → chạy → bắt lỗi</text>
+
+  <rect x="210" y="266" width="300" height="52" rx="10" class="box"></rect>
+  <text x="360" y="288" text-anchor="middle" class="t">④ Ghi kết quả</text>
+  <text x="360" y="307" text-anchor="middle" class="s">append tool_result · kiểm điều kiện dừng</text>
+
+  <line x1="360" y1="108" x2="360" y2="124" class="edge" marker-end="url(#al-arrow)"></line>
+  <line x1="360" y1="178" x2="360" y2="194" class="edge" marker-end="url(#al-arrow)"></line>
+  <line x1="360" y1="248" x2="360" y2="264" class="edge" marker-end="url(#al-arrow)"></line>
+
+  <!-- Loop back -->
+  <path d="M210,292 H194 V82 H206" class="edge-accent flow" marker-end="url(#al-arrow-accent)"></path>
+  <text x="188" y="190" text-anchor="middle" class="s mono fill-accent" transform="rotate(-90 188 190)">lặp lại</text>
+
+  <!-- Model -->
+  <rect x="570" y="124" width="134" height="56" rx="12" class="box-accent"></rect>
+  <text x="637" y="148" text-anchor="middle" class="t">LLM</text>
+  <text x="637" y="167" text-anchor="middle" class="s">Claude, GPT, …</text>
+  <line x1="510" y1="145" x2="568" y2="145" class="edge" marker-end="url(#al-arrow)"></line>
+  <line x1="568" y1="160" x2="512" y2="160" class="edge" marker-end="url(#al-arrow)"></line>
+
+  <!-- Environment -->
+  <rect x="570" y="194" width="134" height="56" rx="12" class="box"></rect>
+  <text x="637" y="218" text-anchor="middle" class="t">Môi trường</text>
+  <text x="637" y="237" text-anchor="middle" class="s">file · shell · API</text>
+  <line x1="510" y1="215" x2="568" y2="215" class="edge" marker-end="url(#al-arrow)"></line>
+  <line x1="568" y1="230" x2="512" y2="230" class="edge" marker-end="url(#al-arrow)"></line>
+
+  <!-- Done -->
+  <rect x="570" y="268" width="134" height="48" rx="12" class="box-accent"></rect>
+  <text x="637" y="288" text-anchor="middle" class="t">Xong</text>
+  <text x="637" y="305" text-anchor="middle" class="s">khi model hết gọi tool</text>
+  <line x1="510" y1="292" x2="568" y2="292" class="edge-accent" marker-end="url(#al-arrow-accent)"></line>
+</svg>

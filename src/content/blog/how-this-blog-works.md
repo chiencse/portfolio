@@ -3,6 +3,7 @@ title: How this blog works
 description: A quick tour of writing posts here — frontmatter, code blocks, tables, drafts and tags. Replace this post with your first real one.
 pubDate: 2026-10-04
 tags: [meta, astro]
+draft: true
 ---
 
 This blog is a folder of Markdown files. Every `.md` or `.mdx` file in `src/content/blog/` becomes a post at `/blog/<file-name>/`, gets listed on the blog page, and lands in the RSS feed.

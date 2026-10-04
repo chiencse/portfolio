@@ -370,3 +370,133 @@
   color: var(--shiki-dark) !important;
   background-color: var(--shiki-dark-bg) !important;
 }
+
+/* ---------- Blog diagrams (inline SVG, themed via tokens) ---------- */
+.diagram svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family: var(--font-sans);
+}
+.diagram .box {
+  fill: var(--surface-2);
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+.diagram .box-accent {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.diagram .box-alt {
+  fill: color-mix(in oklab, var(--accent-2) 13%, transparent);
+  stroke: var(--accent-2);
+  stroke-width: 1.5;
+}
+.diagram .box-info {
+  fill: color-mix(in oklab, var(--accent-3) 13%, transparent);
+  stroke: var(--accent-3);
+  stroke-width: 1.5;
+}
+.diagram .box-warn {
+  fill: color-mix(in oklab, #f59e0b 13%, transparent);
+  stroke: #f59e0b;
+  stroke-width: 1.5;
+}
+.diagram .box-ghost {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 5;
+}
+.diagram .t {
+  fill: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+.diagram .c {
+  fill: var(--ink);
+  font-size: 12px;
+  font-weight: 500;
+}
+.diagram .s {
+  fill: var(--muted);
+  font-size: 12px;
+}
+.diagram .mono {
+  font-family: var(--font-mono);
+}
+.diagram .fill-accent {
+  fill: var(--accent);
+}
+.diagram .fill-alt {
+  fill: var(--accent-2);
+}
+.diagram .fill-info {
+  fill: var(--accent-3);
+}
+.diagram .fill-warn {
+  fill: #f59e0b;
+}
+.diagram .edge {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+.diagram .edge-accent {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.75;
+}
+.diagram .edge-alt {
+  fill: none;
+  stroke: var(--accent-2);
+  stroke-width: 1.5;
+}
+.diagram .edge-warn {
+  fill: none;
+  stroke: #f59e0b;
+  stroke-width: 1.5;
+}
+.diagram .dashed {
+  stroke-dasharray: 5 5;
+}
+.diagram .flow {
+  stroke-dasharray: 6 6;
+  animation: diagram-flow 1.2s linear infinite;
+}
+.diagram .head {
+  fill: var(--muted);
+}
+.diagram .head-accent {
+  fill: var(--accent);
+}
+.diagram .head-alt {
+  fill: var(--accent-2);
+}
+.diagram .head-warn {
+  fill: #f59e0b;
+}
+@keyframes diagram-flow {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+/* Callouts inside posts */
+.callout > :first-child {
+  margin-top: 0;
+}
+.callout > :last-child {
+  margin-bottom: 0;
+}
+
+/* Show code exactly as typed: no "<-" → "←" or "!=" → "≠" ligatures */
+code,
+pre,
+kbd,
+.font-mono,
+.diagram .mono {
+  font-variant-ligatures: none;
+  font-feature-settings: 'calt' 0, 'liga' 0;
+}

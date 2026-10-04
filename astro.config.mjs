@@ -9,6 +9,7 @@ export default defineConfig({
   site: 'https://chiencse.github.io',
   base: '/portfolio',
   trailingSlash: 'ignore',
+  devToolbar: { enabled: false },
   integrations: [mdx(), sitemap()],
   markdown: {
     shikiConfig: {

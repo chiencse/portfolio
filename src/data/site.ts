@@ -12,7 +12,7 @@ export const profile = {
   handle: 'chiencse',
   role: 'Software Engineer',
   company: 'VNG',
-  tagline: 'Fullstack developer, backend at heart.',
+  tagline: 'Software Engineering, AI Integration.',
   intro:
     'I design and build backend systems that stay fast, secure and easy to change — and the web apps that sit on top of them.',
   about: [
@@ -32,7 +32,6 @@ export const facts: { label: string; value: string }[] = [
   { label: 'GPA', value: '3.6 / 4.0' },
   { label: 'Focus', value: 'Backend · System design' },
   { label: 'Based in', value: 'Ho Chi Minh City' },
-  { label: 'Published in', value: 'SN Computer Science' },
 ];
 
 export type Experience = {

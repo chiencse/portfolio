@@ -1,0 +1,233 @@
+---
+title: 'Đọc một cổ phiếu: phân tích cơ bản, phân tích kỹ thuật và các chỉ số cần biết'
+description: Báo cáo tài chính, EPS, P/E, P/B, ROE, D/E, cổ tức, định giá và biên an toàn — rồi nến, xu hướng, khối lượng, MA, RSI, MACD, Bollinger và giới hạn của phân tích kỹ thuật.
+pubDate: 2026-10-11T09:00:00+07:00
+tags: [dau-tu, chung-khoan, tai-chinh]
+---
+
+import Figure from '@/components/blog/Figure.astro';
+import Callout from '@/components/blog/Callout.astro';
+import FinancialStatements from '@/components/diagrams/FinancialStatements.astro';
+import RatiosMap from '@/components/diagrams/RatiosMap.astro';
+import CandleAnatomy from '@/components/diagrams/CandleAnatomy.astro';
+import TechChart from '@/components/diagrams/TechChart.astro';
+import RsiChart from '@/components/diagrams/RsiChart.astro';
+
+<Callout type="warning" title="Nội dung giáo dục">
+Tổng hợp từ kiến thức mình viết cho **Sàn Tập**, một web mô phỏng đầu tư chứng khoán để tự học. Không phải khuyến nghị mua bán hay tư vấn tài chính cá nhân. Mọi công ty và biểu đồ trong ví dụ đều là giả lập. Phí, margin và một số quy định cụ thể thì tùy công ty chứng khoán hoặc tùy quỹ.
+</Callout>
+
+Bài thứ hai trong ba bài về đầu tư chứng khoán (bài trước: [Chứng khoán cho người mới](../chung-khoan-cho-nguoi-moi/)). Phần đầu trả lời *mua cái gì*: doanh nghiệp kiếm tiền tốt không và giá đang đắt hay rẻ. Phần sau trả lời *mua lúc nào, sai thì thoát ở đâu*.
+
+## Phần 1 — Phân tích cơ bản: doanh nghiệp đáng giá bao nhiêu?
+
+Phân tích cơ bản trả lời câu hỏi: **doanh nghiệp này kiếm tiền tốt không, và giá hiện tại đắt hay rẻ so với giá trị của nó?** Bạn không cần là kế toán, chỉ cần đọc được vài con số quan trọng và biết chúng nói gì.
+
+### Ba báo cáo tài chính
+
+<Figure caption="Ba báo cáo nhìn doanh nghiệp từ ba góc và nối với nhau.">
+  <FinancialStatements />
+</Figure>
+
+- **Kết quả kinh doanh**: đi từ doanh thu tới lợi nhuận ròng. **Biên lợi nhuận** cho biết trên mỗi 100 đồng bán hàng, công ty giữ lại được bao nhiêu.
+- **Cân đối kế toán**: **Tài sản = Nợ phải trả + Vốn chủ sở hữu.** Vốn chủ là phần thuộc về cổ đông.
+- **Lưu chuyển tiền tệ**: tiền **thật** vào và ra.
+
+<Callout type="warning" title="Lãi trên giấy, tiền không về">
+Công ty báo lãi nhiều năm liền nhưng **dòng tiền từ kinh doanh luôn âm** là tín hiệu cảnh báo: lợi nhuận có thể chỉ nằm ở khoản phải thu, ở hàng tồn kho, hoặc ở những bút toán khó kiểm chứng.
+</Callout>
+
+Khi đọc báo cáo: so với **cùng kỳ năm trước**, nhìn **xu hướng nhiều năm**, so với **doanh nghiệp cùng ngành**, và loại bỏ các khoản **lợi nhuận một lần** (bán tài sản, hoàn nhập dự phòng).
+
+### Các chỉ số trên một ví dụ
+
+<Figure caption="Từ năm con số trong báo cáo tài chính, tính ra sáu chỉ số hay dùng nhất.">
+  <RatiosMap />
+</Figure>
+
+#### EPS và P/E: đang trả bao nhiêu cho mỗi đồng lợi nhuận?
+
+<Callout type="concept" title="EPS, P/E">
+**EPS = Lợi nhuận ròng ÷ Số cổ phiếu**: lợi nhuận mà mỗi cổ phiếu tạo ra. **P/E = Giá ÷ EPS**: số đồng bạn trả cho 1 đồng lợi nhuận mỗi năm.
+</Callout>
+
+Công ty A: EPS = 500 tỷ ÷ 100 triệu cổ phiếu = **5.000đ**. Giá 60.000đ, nên P/E = **12**. Nghịch đảo 1/12 ≈ **8,3%** là "lợi suất lợi nhuận", có thể so tương đối với lãi tiết kiệm.
+
+- So P/E **trong cùng ngành**, với **lịch sử của chính công ty**, và với **tốc độ tăng trưởng**. Công ty lợi nhuận tăng 25%/năm xứng đáng có P/E cao hơn công ty tăng 3%.
+- P/E **vô nghĩa khi công ty lỗ**.
+- Phát hành thêm cổ phiếu làm **pha loãng** EPS.
+
+#### P/B, BVPS và ROE: tài sản và hiệu quả dùng vốn
+
+- **BVPS = Vốn chủ ÷ Số cổ phiếu** = 3.000 tỷ ÷ 100 triệu = **30.000đ**. **P/B = Giá ÷ BVPS** = **2,0**.
+- **ROE = Lợi nhuận ròng ÷ Vốn chủ** = 500 ÷ 3.000 = **16,7%**: "lãi suất" mà doanh nghiệp tạo ra trên vốn của cổ đông. **ROA** cũng tương tự nhưng tính trên tổng tài sản.
+- Ba chỉ số nối với nhau: **P/E = P/B ÷ ROE**. P/B thấp nhưng ROE cũng thấp thì tính theo lợi nhuận vẫn có thể là đắt.
+
+<Callout type="tip" title="ROE cao từ đâu ra?">
+ROE cao nhờ **kinh doanh giỏi** bền hơn ROE cao nhờ **vay nợ nhiều**. Luôn đọc ROE cùng với D/E.
+</Callout>
+
+#### Nợ vay: đòn bẩy hai lưỡi
+
+- **D/E = Nợ vay ÷ Vốn chủ** = 1.500 ÷ 3.000 = **0,5**. Với doanh nghiệp thông thường, dưới 1 là khá an toàn, trên 2 thì cần xem kỹ. Ngân hàng là trường hợp đặc thù, cần đánh giá theo cách riêng.
+- **Khả năng trả lãi = Lợi nhuận trước lãi vay và thuế ÷ Chi phí lãi vay.** Dưới khoảng 1,5–2 lần là đáng lo.
+- Lãi suất tăng, nợ đáo hạn dồn dập, chu kỳ ngành đi xuống: đó là lúc nợ vay biến lãi thành lỗ.
+
+### Cổ tức và ngày GDKHQ
+
+- Cổ tức tiền mặt tính theo **% mệnh giá 10.000đ**: chia 15% nghĩa là 1.500đ/cổ phiếu, bị khấu trừ thuế 5% nên thực nhận **1.425đ**.
+- Ngày GDKHQ, **giá tham chiếu giảm đúng bằng cổ tức**: 60.000đ thành 58.500đ. Tổng tài sản của bạn **không tự nhiên tăng lên**.
+- Cổ tức bằng cổ phiếu làm tăng số cổ phiếu bạn có, nhưng giá được điều chỉnh tương ứng và EPS bị pha loãng.
+
+<Callout type="warning" title="Chạy theo tỷ suất cổ tức cao">
+Tỷ suất cổ tức 12% có thể chỉ vì giá đã giảm mạnh do công ty đang gặp khó, và năm sau có thể không chia nữa. Hãy xem **tỷ lệ chi trả** (cổ tức ÷ lợi nhuận) và sức khỏe dòng tiền.
+</Callout>
+
+### Định giá đơn giản và biên an toàn
+
+> *Giá là thứ bạn trả, giá trị là thứ bạn nhận được.*
+
+Cách đơn giản: **Giá trị ≈ EPS dự phóng × P/E hợp lý**, kiểm tra chéo bằng **P/B hợp lý × BVPS**. Luôn lập **ba kịch bản**:
+
+| Kịch bản | EPS dự phóng | P/E hợp lý | Giá trị |
+| --- | --- | --- | --- |
+| Xấu | 4.000đ | 9 | 36.000đ |
+| Cơ sở | 5.500đ | 12 | 66.000đ |
+| Tốt | 6.500đ | 14 | 91.000đ |
+
+<Callout type="concept" title="Biên an toàn">
+Chỉ mua khi giá thấp hơn giá trị ước tính **một khoảng đủ lớn**, ví dụ 20–30%, để chừa chỗ cho sai sót trong dự phóng. Với giá trị cơ sở 66.000đ và biên an toàn 25%, vùng giá đáng cân nhắc là dưới khoảng **49.500đ**.
+</Callout>
+
+Ở giá 60.000đ, so với kịch bản xấu thì có thể **giảm 40%**, còn so với kịch bản tốt thì có thể **tăng 52%**. Tỷ lệ lời/lỗ như vậy chưa hấp dẫn.
+
+### Ngành nghề và chu kỳ
+
+- Chu kỳ kinh tế đi qua các giai đoạn: phục hồi → tăng trưởng → quá nóng → suy thoái. Thị trường chứng khoán thường **đi trước** nền kinh tế.
+- **Nhóm chu kỳ** (thép, dầu khí, chứng khoán, bất động sản): lợi nhuận biến động mạnh. **Nhóm phòng thủ** (sữa, điện, dược): ổn định hơn.
+- **Beta > 1**: cổ phiếu dao động mạnh hơn thị trường.
+
+<Callout type="warning" title="Bẫy P/E thấp ở đỉnh chu kỳ">
+Công ty thép lãi kỷ lục nên P/E chỉ 5, trông rất rẻ. Nhưng nếu lợi nhuận đang ở đỉnh chu kỳ và năm sau giảm 70%, thì P/E tính trên lợi nhuận mới sẽ là khoảng 17. Với cổ phiếu chu kỳ, **P/E thấp nhất thường xuất hiện đúng lúc nguy hiểm nhất**.
+</Callout>
+
+### Use case
+
+<Callout type="usecase" title="Lọc nhanh một doanh nghiệp">
+Năm câu hỏi: doanh thu và lợi nhuận tăng đều nhiều năm không? ROE trên 15% có bền không? D/E dưới 1 không? Dòng tiền kinh doanh dương không? P/E có hợp lý so với ngành và tốc độ tăng trưởng không?
+</Callout>
+
+<Callout type="usecase" title="So sánh hai công ty cùng ngành">
+Công ty B có P/E 8 và ROE 9%; Công ty A có P/E 12 và ROE 16,7%. B rẻ hơn theo P/E, nhưng A dùng vốn hiệu quả gần gấp đôi. "Rẻ" chưa chắc đã là món hời.
+</Callout>
+
+### Tóm tắt
+
+| Chỉ số | Công thức | Ý nghĩa |
+| --- | --- | --- |
+| EPS | LN ròng ÷ số CP | Lợi nhuận mỗi cổ phiếu |
+| P/E | Giá ÷ EPS | Trả bao nhiêu cho 1 đồng lợi nhuận |
+| BVPS | Vốn chủ ÷ số CP | Giá trị sổ sách mỗi cổ phiếu |
+| P/B | Giá ÷ BVPS | Trả bao nhiêu cho 1 đồng tài sản ròng |
+| ROE | LN ròng ÷ Vốn chủ | Hiệu quả dùng vốn cổ đông |
+| D/E | Nợ vay ÷ Vốn chủ | Mức độ dùng đòn bẩy |
+
+## Phần 2 — Phân tích kỹ thuật: mua lúc nào, sai thì thoát ở đâu?
+
+Phân tích cơ bản (phần *Phân tích cơ bản: doanh nghiệp đáng giá bao nhiêu?*) trả lời *mua cái gì*. Phân tích kỹ thuật (PTKT) giúp trả lời *mua lúc nào, và sai thì thoát ở đâu*, bằng cách đọc hành vi giá và khối lượng. Hãy coi nó là **công cụ ước lượng xác suất và quản trị rủi ro**, không phải quả cầu pha lê.
+
+### Nến Nhật: mỗi cây nến kể chuyện một phiên
+
+<Figure caption="Bốn mức giá của một phiên: mở cửa, cao nhất, thấp nhất, đóng cửa.">
+  <CandleAnatomy />
+</Figure>
+
+- **Thân dài**: một phe áp đảo trong phiên. **Bóng dài**: giá bị đẩy đi xa rồi bị kéo ngược lại.
+- Trên HOSE có nến **kịch trần** và **kịch sàn** do biên độ ±7%. Nến sàn mà khối lượng rất nhỏ có thể là dấu hiệu trắng bên mua.
+
+<Callout type="warning" title="Mẫu nến không phải lời tiên tri">
+Một cây "búa" hay "nhấn chìm" đơn lẻ chỉ là **gợi ý xác suất**. Cần đặt nó trong bối cảnh xu hướng, khối lượng, và chờ phiên tiếp theo xác nhận.
+</Callout>
+
+### Xu hướng, hỗ trợ và kháng cự
+
+<Figure caption="Giai đoạn đầu: đỉnh và đáy nâng dần, giá nằm trên MA20 đang dốc lên. Giai đoạn sau: đi ngang giữa hỗ trợ và kháng cự, MA20 cắt qua cắt lại liên tục.">
+  <TechChart />
+</Figure>
+
+- **Xu hướng tăng**: đỉnh sau cao hơn đỉnh trước, đáy sau cao hơn đáy trước. **Xu hướng giảm** thì ngược lại. Còn lại là **đi ngang**.
+- **Hỗ trợ** và **kháng cự** là các *vùng* giá, hình thành từ trí nhớ của đám đông: "lần trước giá về đây thì có nhiều người mua". Kháng cự bị phá vỡ thường **đổi vai** thành hỗ trợ.
+- Phá vỡ đi kèm **khối lượng lớn** đáng tin hơn. Phá vỡ giả rất phổ biến, nhất là ở mã thanh khoản thấp.
+
+<Callout type="tip" title="Hỗ trợ không phải sàn bê tông">
+Nếu mua gần hỗ trợ, hãy đặt điểm cắt lỗ **ngay dưới** vùng hỗ trợ. Giá thủng hỗ trợ nghĩa là luận điểm của bạn đã sai.
+</Callout>
+
+### Khối lượng: sức nặng phía sau giá
+
+- Khối lượng là số cổ phiếu khớp trong phiên. Luôn so với **trung bình 20 phiên của chính mã đó**, không so giữa các mã khác nhau.
+- **Giá tăng kèm khối lượng cao** là xác nhận. **Giá tăng nhưng khối lượng teo dần** cho thấy đà yếu.
+- Mỗi lệnh khớp đều có cả người mua lẫn người bán. Khối lượng đo **mức độ tham gia**, không đo "dòng tiền vào".
+- Ở mã penny, khối lượng có thể bị **tạo ra** bằng cách tự mua tự bán (xem bài [Quản trị rủi ro, tâm lý và chiến lược đầu tư dài hạn](../rui-ro-tam-ly-va-chien-luoc-dau-tu/)).
+
+### Đường trung bình động (MA)
+
+<Callout type="concept" title="MA">
+**MA(N)** = trung bình giá đóng cửa của N phiên gần nhất. **MA20** cho ngắn hạn, **MA50** cho trung hạn, **MA200** cho dài hạn.
+</Callout>
+
+- Giá nằm trên một đường MA đang dốc lên là **bối cảnh tăng**. MA có thể đóng vai hỗ trợ hoặc kháng cự "động".
+- MA là chỉ báo **trễ**: nó xác nhận xu hướng muộn chứ không dự báo.
+- Khi thị trường **đi ngang**, tín hiệu "giá cắt MA" xuất hiện liên tục và phần lớn là nhiễu. Mỗi lần vào ra mất khoảng 0,4% phí và thuế, nên tài khoản bị bào mòn dần.
+
+### RSI và MACD: đo đà
+
+<Figure caption="RSI(14) của cùng chuỗi giá: trong xu hướng tăng, RSI có thể nằm gần hoặc trên 70 rất lâu.">
+  <RsiChart />
+</Figure>
+
+<Callout type="concept" title="RSI">
+**RSI(14)** so sánh độ lớn trung bình của các phiên tăng với các phiên giảm trong 14 phiên, rồi quy về thang 0–100: **RSI = 100 − 100 ÷ (1 + RS)**, với RS = trung bình tăng ÷ trung bình giảm. Trên 70 gọi là **quá mua**, dưới 30 gọi là **quá bán**.
+</Callout>
+
+<Callout type="concept" title="MACD">
+**MACD = EMA12 − EMA26** (EMA là trung bình động có trọng số, ưu tiên các phiên gần đây). **Đường tín hiệu** là EMA9 của MACD. **Histogram = MACD − đường tín hiệu**: cho biết đà đang mạnh lên hay yếu đi.
+</Callout>
+
+<Callout type="warning" title="Quá mua chưa chắc sẽ giảm">
+RSI trên 70 trong một xu hướng tăng mạnh có thể kéo dài hàng tuần. RSI dưới 30 cũng chưa phải là đáy. Thêm nữa, các chỉ báo đều được tính từ **cùng một chuỗi giá**, nên khi RSI, MACD và MA "cùng đồng thuận", đó không phải là ba bằng chứng độc lập.
+</Callout>
+
+### Dải Bollinger
+
+- **Bollinger(20, 2)**: đường giữa là MA20, hai dải nằm cách đường giữa **2 lần độ lệch chuẩn**. Đây là thước đo **biến động**.
+- Khi giá đi ngang, giá hay dao động qua lại giữa hai dải. Khi có xu hướng mạnh, giá có thể **bám dải trên hoặc dải dưới** rất lâu.
+- Dải **thắt hẹp** báo hiệu biến động đang thấp và có thể sắp biến động mạnh, nhưng **không cho biết hướng**.
+- Chạm dải dưới trong một xu hướng giảm có lý do cơ bản **không phải** là tín hiệu mua.
+
+### Giới hạn trung thực của PTKT
+
+- PTKT thất bại khi có **tin bất ngờ**, khi biểu đồ bị **"vẽ"** ở mã thanh khoản thấp, hoặc khi ta mắc **thiên kiến nhìn lại** và tối ưu quá mức trên dữ liệu quá khứ.
+- Kết quả phụ thuộc vào **cả tỷ lệ thắng lẫn tỷ lệ lời/lỗ**. Thắng 40% số lần vẫn có lãi nếu mỗi lần lời gấp 2–3 lần mỗi lần lỗ.
+- Ở Việt Nam, **T+2**, khả năng **giảm sàn liên tiếp** và chi phí khoảng **0,4% mỗi vòng** khiến lướt sóng theo biểu đồ khó hơn nhiều so với khi tính trên giấy.
+
+### Use case
+
+<Callout type="usecase" title="Chọn điểm vào cho một cổ phiếu đã phân tích cơ bản">
+Doanh nghiệp tốt, định giá hợp lý (xem phần *Phân tích cơ bản: doanh nghiệp đáng giá bao nhiêu?*). Chờ giá về gần vùng hỗ trợ, hoặc phá vỡ kháng cự với khối lượng cao. Đặt cắt lỗ dưới hỗ trợ, rồi tính khối lượng mua theo mức rủi ro (xem bài [Quản trị rủi ro, tâm lý và chiến lược đầu tư dài hạn](../rui-ro-tam-ly-va-chien-luoc-dau-tu/)).
+</Callout>
+
+<Callout type="usecase" title="Đọc bối cảnh, không đoán đỉnh đáy">
+Giá dưới MA200 đang dốc xuống: bối cảnh xấu, nên giảm tỷ trọng và không bắt đáy. Giá trên MA50 và MA200 đang dốc lên: bối cảnh thuận lợi, nhưng vẫn cần điểm cắt lỗ.
+</Callout>
+
+### Tóm tắt
+
+| Công cụ | Đo cái gì | Cạm bẫy |
+| --- | --- | --- |
+| Nến | Diễn biến một phiên | Tín hiệu đơn lẻ không đáng tin |
+| Xu hướng, hỗ trợ/kháng cự | Cấu trúc giá | Phá vỡ giả |
+| Khối lượng | Mức độ tham gia | Có thể bị tạo ra ở mã penny |
+| MA | Xu hướng đã làm mượt | Trễ, nhiễu khi đi ngang |
+| RSI / MACD | Đà tăng giảm | Quá mua có thể kéo dài |
+| Bollinger | Biến động | Chạm dải không phải tín hiệu |

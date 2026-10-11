@@ -1,0 +1,339 @@
+---
+title: 'Quản trị rủi ro, tâm lý và chiến lược đầu tư dài hạn'
+description: Toán học thua lỗ, quy mô vị thế, cắt lỗ, margin; các bẫy tâm lý như FOMO, bắt đáy, lùa gà; rồi DCA, ETF, quỹ mở, phí quỹ và cách lập kế hoạch dài hạn.
+pubDate: 2026-10-11T10:00:00+07:00
+tags: [dau-tu, chung-khoan, tai-chinh]
+---
+
+import Figure from '@/components/blog/Figure.astro';
+import Callout from '@/components/blog/Callout.astro';
+import LossRecovery from '@/components/diagrams/LossRecovery.astro';
+import MarginChart from '@/components/diagrams/MarginChart.astro';
+import PumpDump from '@/components/diagrams/PumpDump.astro';
+import FeeDrag from '@/components/diagrams/FeeDrag.astro';
+import EtfMechanism from '@/components/diagrams/EtfMechanism.astro';
+
+<Callout type="warning" title="Nội dung giáo dục">
+Tổng hợp từ kiến thức mình viết cho **Sàn Tập**, một web mô phỏng đầu tư chứng khoán để tự học. Không phải khuyến nghị mua bán hay tư vấn tài chính cá nhân. Mọi công ty và biểu đồ trong ví dụ đều là giả lập. Phí, margin và một số quy định cụ thể thì tùy công ty chứng khoán hoặc tùy quỹ.
+</Callout>
+
+Bài cuối trong ba bài về đầu tư chứng khoán (trước đó: [Chứng khoán cho người mới](../chung-khoan-cho-nguoi-moi/) và [Đọc một cổ phiếu](../phan-tich-co-phieu/)). Biết chọn cổ phiếu chưa đủ: phần lớn thua lỗ đến từ quản trị rủi ro kém và từ chính tâm lý của mình. Bài kết thúc bằng những chiến lược dài hạn phù hợp với số đông.
+
+## Phần 1 — Quản trị rủi ro và vốn
+
+Người mới thường hỏi "mua mã nào để lãi?". Người sống sót lâu trên thị trường hỏi "nếu mình sai thì mất bao nhiêu?". Phần này là về câu hỏi thứ hai.
+
+### Toán học của thua lỗ
+
+<Figure caption="Lỗ càng sâu, phần lãi cần để gỡ lại càng tăng nhanh. Lỗ 90% cần lãi 900%.">
+  <LossRecovery />
+</Figure>
+
+<Callout type="concept" title="Lãi cần để hòa vốn">
+Lỗ **L%** cần lãi **L ÷ (1 − L)** mới về lại vốn ban đầu: lỗ 20% cần +25%, lỗ 50% cần +100%.
+</Callout>
+
+- Tăng 20% rồi giảm 20% không đưa bạn về chỗ cũ: 100 → 120 → **96**. Biến động tự nó đã bào mòn tài sản.
+- **Drawdown** là mức sụt từ đỉnh gần nhất. Đánh giá một chiến lược phải nhìn cả lợi nhuận *lẫn* mức sụt tệ nhất của nó.
+
+### Đa dạng hóa: đừng bỏ hết trứng vào một giỏ
+
+- Đa dạng hóa giúp **một sai lầm đơn lẻ không xóa sổ cả tài khoản**.
+- Nó giảm **rủi ro riêng** của từng doanh nghiệp, nhưng **không** loại bỏ được **rủi ro hệ thống**: khi cả thị trường giảm 30%, danh mục đa dạng vẫn giảm.
+- Điều quan trọng là các mã **ít cùng lên cùng xuống** (khác ngành, khác chu kỳ), không phải số lượng mã. Mười mã cổ phiếu bất động sản vẫn chỉ là một khoản cược.
+
+<Callout type="tip" title="Quy tắc thực hành">
+Khoảng 5–8 mã, thuộc ít nhất 4 ngành, mỗi mã không quá 20–25% vốn. Cách đơn giản nhất để đa dạng hóa là dùng quỹ ETF (xem phần *Chiến lược dài hạn và quỹ đầu tư*).
+</Callout>
+
+### Quy mô vị thế: mua bao nhiêu là vừa?
+
+Quyết định **trước** mình chấp nhận mất bao nhiêu, thường là **1–2% tổng vốn cho mỗi lệnh**, rồi mới tính số cổ phiếu cần mua.
+
+<Callout type="concept" title="Công thức">
+**Số cổ phiếu = (Vốn × % rủi ro) ÷ (Giá mua − Giá cắt lỗ)**, làm tròn xuống theo lô 100.
+</Callout>
+
+<Callout type="example" title="Tính khối lượng mua">
+Vốn 100 triệu, chấp nhận rủi ro 1% = **1 triệu**. Mua giá 25.000đ, cắt lỗ ở 23.000đ, tức rủi ro 2.000đ mỗi cổ phiếu. Số cổ phiếu = 1.000.000 ÷ 2.000 = **500 cổ phiếu**, giá trị 12,5 triệu (12,5% vốn). Nếu cắt lỗ xa hơn, ở 21.000đ, thì chỉ mua **200 cổ phiếu** (làm tròn xuống từ 250).
+</Callout>
+
+Rủi ro nhỏ cho mỗi lệnh giúp bạn sống sót qua **chuỗi thua**. Mười lệnh thua liên tiếp, mỗi lệnh mất 1%, tài khoản vẫn còn khoảng 90%. Nếu mỗi lệnh mất 10%, tài khoản chỉ còn khoảng 35%.
+
+### Cắt lỗ: phí bảo hiểm cho tài khoản
+
+- Cắt lỗ là **chấp nhận một khoản lỗ nhỏ đã định trước** để tránh một khoản lỗ lớn.
+- **Viết ra điểm cắt lỗ trước khi mua**. Có thể đặt theo vùng hỗ trợ, theo một % cố định, hoặc theo luận điểm ("nếu lợi nhuận quý tới giảm thì bán").
+- Điểm cắt lỗ chỉ được **dời lên** khi giá tăng, **không bao giờ dời xuống**.
+
+<Callout type="warning" title="Bán được đúng giá cắt lỗ là chuyện không chắc">
+Giá mở cửa có thể giảm thẳng qua điểm cắt lỗ của bạn. T+2 có thể khiến bạn chưa bán được, và giảm sàn trắng bên mua có thể giữ chân bạn nhiều phiên. Khi đã chạm điểm cắt lỗ thì cắt **sớm**, đừng chờ "hồi lên một chút".
+</Callout>
+
+### Margin: đòn bẩy hai lưỡi
+
+<Figure caption="Vốn tự có 100 triệu, vay thêm 100 triệu: giá giảm khoảng 16,7% là bị call, khoảng 28,6% là bị bán giải chấp.">
+  <MarginChart />
+</Figure>
+
+<Callout type="concept" title="Tỷ lệ ký quỹ">
+**Tỷ lệ ký quỹ = (Tài sản − Nợ) ÷ Tài sản.** Dưới ngưỡng **call** (40%), bạn phải nộp thêm tiền hoặc bán bớt. Dưới ngưỡng **giải chấp** (30%), công ty chứng khoán tự bán cổ phiếu của bạn để thu nợ.
+</Callout>
+
+<Callout type="example" title="Tính ngưỡng call và giải chấp">
+Vốn 100 triệu, vay thêm 100 triệu, mua 200 triệu cổ phiếu. Bị call khi (A − 100) ÷ A = 40%, tức A = 166,7 triệu: giá giảm **16,7%**. Bị giải chấp khi A = 142,9 triệu: giá giảm **28,6%**. Lúc đó tài sản ròng chỉ còn 42,9 triệu, nghĩa là bạn đã **mất 57% vốn** dù cổ phiếu chỉ giảm chưa tới 30%. Chưa kể lãi vay 13%/năm tính mỗi ngày.
+</Callout>
+
+Tệ nhất là khi cổ phiếu **giảm sàn trắng bên mua**: lệnh giải chấp cũng không khớp được, giá tiếp tục giảm, và khoản lỗ có thể vượt xa mọi tính toán. Cổ phiếu penny thường không được cho vay margin, và đó là có lý do.
+
+### Thanh khoản: mua được chưa chắc bán được
+
+- Giá trên bảng là **giá khớp gần nhất**. Nó không đảm bảo bạn bán được *toàn bộ* cổ phiếu ở giá đó.
+- Đo thanh khoản bằng: **giá trị giao dịch trung bình** mỗi phiên, độ dày của dư mua và dư bán, và **chênh lệch giá mua–bán**.
+- Sổ lệnh mỏng thì lệnh lớn chỉ khớp được một phần, và giá bình quân thấp hơn kỳ vọng.
+
+<Callout type="tip" title="Giữ vị thế nhỏ so với thanh khoản">
+Nếu một mã mỗi phiên chỉ giao dịch khoảng 500 triệu, thì vị thế 300 triệu có thể mất nhiều phiên mới bán hết, nhất là đúng lúc mọi người cùng muốn bán.
+</Callout>
+
+### Use case
+
+<Callout type="usecase" title="Danh mục 100 triệu cho người mới">
+Rủi ro 1% mỗi lệnh, tối đa 5–6 vị thế, mỗi mã không quá 20% vốn, ít nhất 4 ngành, không dùng margin. Một nửa vốn đặt ở quỹ chỉ số làm phần "lõi" (xem phần *Chiến lược dài hạn và quỹ đầu tư*).
+</Callout>
+
+<Callout type="usecase" title="Đánh giá chiến lược của chính mình">
+Ghi lại từng lệnh. Sau 6 tháng tính tỷ lệ thắng, lãi trung bình, lỗ trung bình và mức sụt lớn nhất. So với việc chỉ mua và giữ VN-Index trong cùng thời gian.
+</Callout>
+
+### Tóm tắt
+
+- Lỗ L% cần lãi L ÷ (1 − L). **Bảo vệ vốn đi trước.**
+- Đa dạng hóa theo **ngành và chu kỳ**, không theo số lượng mã.
+- Tính khối lượng mua từ **mức rủi ro chấp nhận được**, không từ cảm giác "chắc ăn".
+- Cắt lỗ viết ra trước khi mua, chỉ dời lên.
+- Margin vay bằng 100% vốn: giảm khoảng 17% là bị call, khoảng 29% là bị giải chấp.
+
+## Phần 2 — Tâm lý và các bẫy
+
+Biết P/E, biết RSI chưa đủ. Phần lớn thua lỗ của người mới đến từ **cảm xúc** và những **lối tắt tư duy** của chính bộ não. Phần này gọi tên từng cái bẫy, đưa ra con số cho thấy cái giá của nó, và cách tự phòng vệ.
+
+### FOMO: nỗi sợ lỡ tàu
+
+**FOMO** (fear of missing out) là mua vì sợ bỏ lỡ, chứ không phải vì đã phân tích. Nó thường xuất hiện ở **cuối** một đợt tăng nóng, khi cổ phiếu được bàn tán ở khắp nơi.
+
+<Callout type="example" title="Cái giá của mua đuổi">
+Mua ở đỉnh rồi cổ phiếu giảm 25% thì cần tăng **33,3%** mới hòa vốn. Khi một mã đã "ai cũng biết", thì người mua sớm đang cần người mua muộn để họ chốt lời.
+</Callout>
+
+<Callout type="tip" title="Phòng vệ FOMO">
+Chờ một phiên trước khi đặt lệnh. Trả lời đủ ba câu hỏi: *mua vì sao? sai thì thoát ở đâu? mua bao nhiêu % vốn?* Giới hạn tỷ trọng, và chia nhỏ lệnh mua.
+</Callout>
+
+### Bắt đáy: "đã giảm nhiều" chưa chắc đã rẻ
+
+- Giá cũ chỉ là **mỏ neo trong đầu bạn**. Cổ phiếu đã giảm 40% vẫn có thể giảm thêm 50%: 100 → 60 → 30.
+- **P/E thấp tính trên lợi nhuận cũ** là ảo giác khi lợi nhuận đang lao dốc.
+- Phân biệt **cả thị trường hoảng loạn** (doanh nghiệp vẫn tốt) với **doanh nghiệp đang xấu đi** (giá giảm có lý do).
+
+Nếu vẫn muốn mua: chờ giá **ngừng tạo đáy mới**, mua từng phần, có điểm cắt lỗ, và **không dùng margin**.
+
+### Trung bình giá xuống: cứu danh mục hay đào hố sâu hơn?
+
+Mua thêm khi đang lỗ để kéo giá vốn xuống làm **con số giá vốn đẹp lên**, nhưng đồng thời **tăng số tiền đặt cược vào một quyết định đang sai**.
+
+<Callout type="example" title="Cắt lỗ sớm vs kéo giá vốn">
+Vốn 100 triệu. Mua 20 triệu ở giá 50.000đ, cổ phiếu giảm 20% về 40.000đ: lỗ 4 triệu. **Cách 1:** cắt lỗ, mất 4 triệu. **Cách 2:** mua thêm 30 triệu ở 40.000đ, rồi thêm 40 triệu ở 30.000đ. Đến lúc này 90 triệu nằm trong một mã. Nếu giá tiếp tục về 18.000đ, khoảng 2.480 cổ phiếu chỉ còn đáng giá khoảng 45 triệu, tức tổng lỗ khoảng **45 triệu, gần nửa tài khoản**.
+</Callout>
+
+<Callout type="tip" title="Câu hỏi kiểm tra">
+*Nếu bây giờ mình đang cầm tiền mặt, mình có mua mã này, với tỷ trọng này không?* Nếu câu trả lời là không, thì việc mua thêm chỉ là phản ứng cảm xúc. DCA theo kế hoạch vào một danh mục đa dạng (xem phần *Chiến lược dài hạn và quỹ đầu tư*) là chuyện hoàn toàn khác.
+</Callout>
+
+### Gồng lỗ, chốt non
+
+Nỗi đau mất tiền lớn **gần gấp đôi** niềm vui được tiền. Vì vậy ta hay **bán mã đang lãi quá sớm** (sợ mất phần lãi) và **ôm mã đang lỗ quá lâu** (không muốn thừa nhận mình sai).
+
+<Callout type="concept" title="Kỳ vọng mỗi lệnh">
+**Kỳ vọng = tỷ lệ thắng × lãi trung bình − tỷ lệ thua × lỗ trung bình.** Thắng 70% với lãi trung bình 5%, thua 30% với lỗ trung bình 20%: 0,7 × 5 − 0,3 × 20 = **−2,5% mỗi lệnh**. Tỷ lệ thắng cao mà vẫn mất tiền.
+</Callout>
+
+- Lỗ tạm tính đã là lỗ thật trên tài sản. Bán hay không chỉ quyết định bạn có tiếp tục giữ rủi ro đó hay không.
+- Đặt **mức cắt lỗ, mục tiêu lợi nhuận và tỷ lệ R/R** trước khi mua. Chốt lời từng phần để phần còn lại được chạy tiếp.
+
+### Lùa gà, phím hàng, úp bô: giải phẫu một vụ làm giá
+
+<Figure caption="Kịch bản điển hình ở một mã penny thanh khoản thấp (giả lập). Người mua ở pha ③ bị kẹt ở pha ④.">
+  <PumpDump />
+</Figure>
+
+1. **Gom hàng**: giá đi ngang, khối lượng thấp, nhóm làm giá lặng lẽ mua vào.
+2. **Kéo trần**: nhiều phiên tăng trần liên tiếp. Chỉ cần ít tiền vì sổ lệnh mỏng.
+3. **Phím hàng và xả**: "tin nội bộ" lan trong các nhóm kín, người mới lao vào mua, nhóm làm giá bán ra.
+4. **Giảm sàn trắng bên mua**: không còn ai mua. Năm phiên sàn liền là **mất khoảng 30%** (0,93⁵ ≈ 0,70), mà bạn **không bán được cổ phiếu nào**.
+
+<Callout type="warning" title="Dấu hiệu nhận diện">
+Mã penny, doanh nghiệp làm ăn kém hoặc thua lỗ, tăng trần liên tục mà không có tin cơ bản, được "phím" trong nhóm kín kèm lời hứa "x2, x3", khối lượng đột biến. Luôn tự hỏi: **khi mọi người đều đang mua, ai đang bán cho mình?**
+</Callout>
+
+### Giao dịch quá nhiều
+
+- Mỗi vòng mua–bán tốn khoảng **0,4%** giá trị, kể cả khi lỗ.
+- Quay vòng vốn 2 lần mỗi tháng tốn khoảng **9,6% vốn mỗi năm**. Năm mươi vòng mỗi năm tốn khoảng **20%**.
+- Nguyên nhân: ảo tưởng kiểm soát, cảm giác hưng phấn khi bấm lệnh, và **giao dịch trả thù** sau một lệnh thua.
+
+<Callout type="tip" title="Ngân sách giao dịch">
+Đặt số lệnh tối đa mỗi tháng. Chỉ vào lệnh khi lãi kỳ vọng đủ lớn so với chi phí. Nghỉ hết ngày sau 2 lệnh thua liên tiếp.
+</Callout>
+
+### Thiên kiến nhận thức
+
+| Thiên kiến | Biểu hiện | Phòng vệ |
+| --- | --- | --- |
+| Xác nhận | Chỉ đọc tin ủng hộ mã mình đang giữ | Chủ động tìm lý do để bán |
+| Mỏ neo | "Trước đây giá 80, giờ 40 là rẻ" | So với giá trị hiện tại, không so với giá cũ |
+| Tự tin thái quá | Vài lệnh thắng liền thì tăng quy mô | Giữ quy tắc về quy mô vị thế |
+| Kẻ sống sót | Nhóm toàn người khoe lãi | Người thua thường im lặng |
+| Đánh giá theo kết quả | Lệnh lãi = quyết định đúng | Chấm điểm theo quy trình |
+| Mua tin đồn, bán sự thật | Tin tốt ra thì giá giảm | Tin đã được kỳ vọng thì đã nằm trong giá |
+
+Công cụ tự phòng vệ: **nhật ký đầu tư** (ghi lý do mua, điểm cắt lỗ, cảm xúc lúc đó), **diễn tập thất bại** ("nếu 6 tháng nữa khoản này lỗ 30%, lý do có thể là gì?"), và **danh sách kiểm tra** trước mỗi lệnh.
+
+### Use case
+
+<Callout type="usecase" title="Checklist trước mỗi lệnh mua">
+Mình mua vì phân tích hay vì sợ lỡ? Điểm cắt lỗ ở đâu? Mua bao nhiêu % vốn? Có đang trung bình giá xuống không? Tháng này mình đã đặt bao nhiêu lệnh?
+</Callout>
+
+<Callout type="usecase" title="Tập trên trình mô phỏng">
+Sàn Tập có các kịch bản giả lập "cơn sốt cổ phiếu penny", "margin trong thị trường hưng phấn rồi sập", "bắt dao rơi", và tự động phát hiện hành vi FOMO, gồng lỗ, giao dịch quá nhiều trong nhật ký lệnh. Mắc bẫy bằng tiền giả rẻ hơn rất nhiều so với bằng tiền thật.
+</Callout>
+
+### Tóm tắt
+
+- FOMO, bắt đáy và trung bình giá xuống đều là **quyết định theo cảm xúc**, được khoác áo "chiến thuật".
+- Tỷ lệ thắng cao vẫn có thể lỗ: hãy nhìn vào **kỳ vọng**.
+- Lùa gà có kịch bản 4 bước. Giảm sàn trắng bên mua là cái bẫy không có lối thoát.
+- Giao dịch quá nhiều: phí và thuế lặng lẽ ăn 10–20% vốn mỗi năm.
+
+## Phần 3 — Chiến lược dài hạn và quỹ đầu tư
+
+Đến đây có thể thấy chọn cổ phiếu riêng lẻ khó đến mức nào: phải phân tích, quản trị rủi ro, và chống lại chính tâm lý của mình. Phần cuối nói về những cách tiếp cận **phù hợp với số đông**: kiên nhẫn, kỷ luật, chi phí thấp.
+
+### Lướt sóng hay dài hạn?
+
+| | Lướt sóng | Đầu tư dài hạn |
+| --- | --- | --- |
+| Kiếm tiền từ | Chênh lệch giá ngắn hạn | Tăng trưởng lợi nhuận và cổ tức |
+| Chi phí mỗi năm | 50 vòng ≈ **20% vốn** | Dưới 1% |
+| Thời gian bỏ ra | Canh bảng giá mỗi ngày | Vài giờ mỗi quý |
+| Lợi thế | Rất mỏng | Thời gian và lãi kép |
+| Rủi ro chính | Chi phí, cảm xúc | Drawdown sâu, chọn nhầm doanh nghiệp xấu |
+
+Lợi thế của người lướt sóng rất mong manh: tỷ lệ thắng chỉ cần giảm từ 50% xuống 45% là một chiến lược đang hòa vốn có thể trở thành **lỗ khoảng 22% mỗi năm** sau phí.
+
+<Callout type="concept" title="Mô hình lõi – vệ tinh">
+**Lõi** (ví dụ 70–80%): quỹ chỉ số hoặc ETF, nắm giữ dài hạn, mua định kỳ. **Vệ tinh** (20–30%): tự chọn cổ phiếu hoặc luyện kỹ năng ngắn hạn, trong giới hạn rủi ro đã đặt. Sai ở phần vệ tinh không làm hỏng kế hoạch chung.
+</Callout>
+
+### Mua và giữ: kiên nhẫn có điều kiện
+
+- Về dài hạn, giá cổ phiếu đi theo lợi nhuận doanh nghiệp: **tổng lợi nhuận ≈ tăng trưởng lợi nhuận + cổ tức + thay đổi P/E**.
+- Người mua và giữ phải chịu được **drawdown 30–40%** mà không bán tháo.
+- **Bán** khi luận điểm đầu tư đã sai hoặc định giá trở nên vô lý. **Không bán** chỉ vì giá dao động hay vì tin đồn.
+
+<Callout type="warning" title="Mua và giữ khác với gồng lỗ">
+Giữ một doanh nghiệp **đang xấu đi** (lợi nhuận giảm nhiều quý, nợ tăng, dòng tiền âm) thì không phải là mua và giữ. Đó là gồng lỗ, chỉ được gọi bằng một cái tên dễ nghe hơn.
+</Callout>
+
+### DCA: đầu tư đều đặn mỗi tháng
+
+<Callout type="concept" title="DCA (Dollar-Cost Averaging)">
+Bỏ **một số tiền cố định** vào thị trường **theo lịch định kỳ**, bất kể giá đang lên hay xuống.
+</Callout>
+
+<Callout type="example" title="Vì sao giá vốn bình quân thấp hơn">
+Mỗi tháng mua 3 triệu chứng chỉ quỹ. Tháng 1 giá 30.000đ, mua được 100 đơn vị. Tháng 2 giá 20.000đ, mua được 150. Tháng 3 giá 25.000đ, mua được 120. Tổng 9 triệu được 370 đơn vị, giá vốn bình quân ≈ **24.324đ**, thấp hơn trung bình cộng ba mức giá là 25.000đ. Lý do: lúc giá thấp, cùng số tiền mua được nhiều hơn.
+</Callout>
+
+- Khi thị trường tăng đều, bỏ tiền **một lần** thường thắng DCA. Giá trị lớn nhất của DCA là **kỷ luật**: không phải đoán đáy, không bỏ cuộc giữa chừng.
+- DCA **theo kế hoạch vào một danh mục đa dạng** khác hẳn việc **trung bình giá xuống một mã đang lỗ** (xem phần *Tâm lý và các bẫy*).
+
+### Quỹ đầu tư: các loại và khác biệt
+
+| Loại | Mua bán ở đâu | Giá | Đặc điểm |
+| --- | --- | --- | --- |
+| **Quỹ mở** | Trực tiếp với quỹ, qua đại lý phân phối | NAV/CCQ tính **sau** khi đóng sổ lệnh | Không biết chính xác giá lúc đặt lệnh |
+| **Quỹ đóng** | Trên sàn | Có thể chênh lệch (thường thấp hơn) so với NAV | Số CCQ cố định, hiếm ở Việt Nam hiện nay |
+| **ETF** | Trên sàn, như cổ phiếu | Giá thị trường, thường bám sát NAV | Mô phỏng một chỉ số |
+
+- **NAV/CCQ** = (tổng tài sản quỹ − nợ) ÷ số chứng chỉ quỹ đang lưu hành.
+- Tài sản quỹ được lưu ký tại **ngân hàng giám sát**, tách biệt với tài sản của công ty quản lý quỹ.
+- Các loại quỹ mở: **tiền tệ** (cho tiền cần trong vài tháng), **trái phiếu** (vài năm), **cân bằng**, **cổ phiếu** (từ 5 năm trở lên). Có thể là **chủ động** (người quản lý chọn mã) hoặc **chỉ số** (thụ động, mô phỏng theo một chỉ số).
+
+#### ETF hoạt động thế nào?
+
+<Figure caption="Thành viên lập quỹ (AP) hoán đổi lô lớn chứng chỉ quỹ với rổ cổ phiếu, nhờ đó giá ETF trên sàn bám sát NAV.">
+  <EtfMechanism />
+</Figure>
+
+- ETF giao dịch như cổ phiếu: lô 100, biên độ ±7%, **bước giá 10đ**, T+2, phí môi giới cộng thuế bán 0,1%.
+- **iNAV** là NAV tham chiếu, được cập nhật liên tục trong phiên. Khi thị trường bán tháo, giá ETF có thể thấp hơn NAV khoảng 1–2%.
+- **Tracking error** (sai lệch so với chỉ số) đến từ phí, lượng tiền mặt tồn và việc cơ cấu danh mục. Khi chỉ số được cơ cấu lại định kỳ, ETF cũng phải mua bán theo.
+
+### Phí quỹ: lãi kép theo chiều ngược lại
+
+<Figure caption="Cùng lợi suất gộp 10%/năm, 100 triệu sau 20 năm: chênh lệch phí 0,5% và 2% là khoảng 147 triệu.">
+  <FeeDrag />
+</Figure>
+
+| Loại phí | Mức thường gặp |
+| --- | --- |
+| Phí mua (phát hành) | 0–1,5%, nhiều quỹ 0% |
+| Phí bán (mua lại) | Giảm dần theo thời gian giữ, ví dụ 1–2% nếu dưới 12 tháng, 0% sau 24 tháng |
+| Phí quản lý | Trừ dần vào NAV: quỹ cổ phiếu chủ động khoảng 1,5–2%/năm, quỹ chỉ số thấp hơn |
+| Thuế khi bán chứng chỉ quỹ | 0,1% giá trị bán |
+
+Phí 1%/năm nghe có vẻ nhỏ, nhưng sau 20 năm nó lấy đi khoảng **17%** thành quả (560 triệu so với 673 triệu). Phí 2%/năm lấy đi khoảng **31%**.
+
+### Chủ động hay thụ động?
+
+- Trên thế giới, các thống kê dài hạn (ví dụ báo cáo SPIVA) cho thấy **đa số** quỹ chủ động thua chỉ số tham chiếu sau 10–15 năm, chủ yếu vì phí và vì thành công rất khó lặp lại.
+- Ở Việt Nam, thị trường còn trẻ. Một số quỹ chủ động từng thắng VN-Index nhiều năm, một phần vì VN-Index bị chi phối bởi vài mã vốn hóa lớn. Nhưng **kết quả quá khứ không đảm bảo tương lai**.
+- Cách dùng thực tế: lấy **VN-Index làm thước đo**. Nếu nhiều năm liền bạn (hoặc quỹ bạn chọn) vẫn thua chỉ số, thì đầu tư theo chỉ số là lựa chọn đáng cân nhắc.
+
+### Chọn quỹ và lập kế hoạch
+
+Đọc **bản cáo bạch** và **báo cáo hằng tháng (factsheet)** của quỹ: mục tiêu đầu tư, chiến lược, top 10 khoản đầu tư, biểu phí, lợi nhuận từng giai đoạn **so với chỉ số tham chiếu**, mức sụt giảm lớn nhất, quy mô quỹ, người điều hành.
+
+<Callout type="concept" title="Phân bổ tài sản và tái cân bằng">
+Chia tiền theo **mục tiêu và thời gian**: tiền cần trong vài tháng để ở quỹ tiền tệ, tiền cần sau vài năm để ở trái phiếu, tiền dài hạn từ 5 năm trở lên để ở cổ phiếu. Định kỳ (ví dụ mỗi năm) **tái cân bằng** về tỷ lệ ban đầu: bán bớt phần đã tăng nhiều, mua thêm phần đang tụt lại.
+</Callout>
+
+**SIP** (Systematic Investment Plan) là đăng ký mua quỹ một số tiền cố định mỗi tháng, tức là DCA được tự động hóa. Nhiều quỹ ở Việt Nam có chương trình này.
+
+### Use case
+
+<Callout type="usecase" title="Người bận rộn: 20 triệu ban đầu và 5 triệu mỗi tháng">
+Kịch bản "fund-path" trong Sàn Tập: trong 3 năm, so sánh **gửi tiết kiệm** với **mua quỹ chỉ số mỗi lần nạp tiền** và **quỹ chủ động**, với cùng lịch nạp tiền. Bài học không nằm ở chuyện bên nào thắng trong 3 năm. Bài học là người theo kế hoạch không bỏ cuộc giữa chừng lúc thị trường giảm.
+</Callout>
+
+<Callout type="usecase" title="Mục tiêu mua nhà sau 2 năm">
+Tiền cho mục tiêu ngắn hạn như vậy để ở quỹ tiền tệ hoặc trái phiếu, không để ở cổ phiếu. Sụt 30% đúng năm cần tiền là rủi ro không đáng nhận.
+</Callout>
+
+### Kế hoạch đầu tư cá nhân: tổng kết
+
+1. **Nền móng**: quỹ dự phòng 3–6 tháng chi tiêu, trả nợ lãi cao, bảo hiểm cơ bản (xem bài [Chứng khoán cho người mới: lãi kép, rủi ro và cơ chế giao dịch ở Việt Nam](../chung-khoan-cho-nguoi-moi/)).
+2. Chỉ đầu tư **tiền nhàn rỗi 3–5 năm**, không vay để đầu tư khi đang học.
+3. **Lõi**: quỹ chỉ số hoặc ETF, mua định kỳ. **Vệ tinh**: cổ phiếu tự chọn, đã phân tích (xem bài [Đọc một cổ phiếu: phân tích cơ bản, phân tích kỹ thuật và các chỉ số cần biết](../phan-tich-co-phieu/)), với quy tắc rủi ro rõ ràng (xem phần *Quản trị rủi ro và vốn*).
+4. **Viết bộ quy tắc cá nhân** ra giấy và luyện trên trình mô phỏng vài tháng (xem phần *Tâm lý và các bẫy*), rồi mới bắt đầu nhỏ với tiền thật.
+5. Đánh giá định kỳ so với **VN-Index và lãi tiết kiệm**.
+
+### Tóm tắt
+
+- Lướt sóng có chi phí cao và lợi thế mỏng. Dài hạn thì cần chịu được drawdown.
+- **DCA/SIP** đổi việc đoán thị trường lấy kỷ luật.
+- Quỹ mở giao dịch theo NAV, ETF giao dịch trên sàn và bám NAV nhờ thành viên lập quỹ.
+- **Phí là thứ duy nhất chắc chắn**, và nó cũng được lãi kép.
+- Lõi chi phí thấp, vệ tinh có giới hạn, quy tắc viết ra giấy.

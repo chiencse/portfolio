@@ -1,0 +1,27 @@
+---
+import LineChart from './LineChart.astro';
+// Illustrative pump-and-dump on a penny stock (thousand VND). Not real data.
+const p: number[] = [];
+for (let i = 0; i < 26; i++) p.push(+(5 + 0.08 * Math.sin(i * 1.7)).toFixed(2));
+for (let i = 0; i < 8; i++) p.push(+(p[p.length - 1] * 1.07).toFixed(2)); // 8 ceiling sessions
+for (let i = 0; i < 9; i++) p.push(+(p[p.length - 1] * (1 + 0.025 * Math.sin(i * 1.9))).toFixed(2));
+for (let i = 0; i < 7; i++) p.push(+(p[p.length - 1] * 0.93).toFixed(2)); // 7 floor sessions
+for (let i = 0; i < 8; i++) p.push(+(p[p.length - 1] * (1 + 0.015 * Math.sin(i))).toFixed(2));
+---
+
+<LineChart
+  label="Giải phẫu một vụ lùa gà: gom hàng, kéo trần, phím hàng và xả, rồi giảm sàn trắng bên mua"
+  height={300}
+  yMin={4}
+  yMax={9.5}
+  legend={false}
+  bands={[
+    { from: 0, to: 25, label: '① gom hàng' },
+    { from: 26, to: 33, label: '② kéo trần' },
+    { from: 34, to: 42, label: '③ phím & xả' },
+    { from: 43, to: 49, label: '④ giảm sàn' },
+  ]}
+  series={[{ name: 'Giá', values: p, cls: 'warn' }]}
+  xTicks={[0, 10, 20, 30, 40, 50].map((i) => ({ i, label: `phiên ${i}` }))}
+  yTicks={[5, 6, 7, 8, 9].map((v) => ({ v, label: `${v}.00` }))}
+/>

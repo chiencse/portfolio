@@ -1,0 +1,110 @@
+---
+title: 'Đầu tư #5 — Quản trị rủi ro: đa dạng hóa, quy mô vị thế, cắt lỗ, margin và thanh khoản'
+description: Vì sao bảo vệ vốn quan trọng hơn tìm lợi nhuận lớn — toán học của thua lỗ, công thức tính khối lượng mua theo rủi ro, cắt lỗ, margin bị call ở mức giảm bao nhiêu, và bẫy thanh khoản.
+pubDate: 2026-10-11T12:00:00+07:00
+tags: [dau-tu, chung-khoan, tai-chinh]
+---
+
+import Figure from '@/components/blog/Figure.astro';
+import Callout from '@/components/blog/Callout.astro';
+import LossRecovery from '@/components/diagrams/LossRecovery.astro';
+import MarginChart from '@/components/diagrams/MarginChart.astro';
+
+<Callout type="warning" title="Nội dung giáo dục">
+Không phải khuyến nghị đầu tư. Ngưỡng margin trong bài (call ở 40%, giải chấp ở 30%, lãi 13%/năm) là quy ước của trình mô phỏng. Thực tế tùy công ty chứng khoán.
+</Callout>
+
+Người mới thường hỏi "mua mã nào để lãi?". Người sống sót lâu trên thị trường hỏi "nếu mình sai thì mất bao nhiêu?". Bài này là về câu hỏi thứ hai.
+
+## Toán học của thua lỗ
+
+<Figure caption="Lỗ càng sâu, phần lãi cần để gỡ lại càng tăng nhanh. Lỗ 90% cần lãi 900%.">
+  <LossRecovery />
+</Figure>
+
+<Callout type="concept" title="Lãi cần để hòa vốn">
+Lỗ **L%** cần lãi **L ÷ (1 − L)** mới về lại vốn ban đầu: lỗ 20% cần +25%, lỗ 50% cần +100%.
+</Callout>
+
+- Tăng 20% rồi giảm 20% không đưa bạn về chỗ cũ: 100 → 120 → **96**. Biến động tự nó đã bào mòn tài sản.
+- **Drawdown** là mức sụt từ đỉnh gần nhất. Đánh giá một chiến lược phải nhìn cả lợi nhuận *lẫn* mức sụt tệ nhất của nó.
+
+## Đa dạng hóa: đừng bỏ hết trứng vào một giỏ
+
+- Đa dạng hóa giúp **một sai lầm đơn lẻ không xóa sổ cả tài khoản**.
+- Nó giảm **rủi ro riêng** của từng doanh nghiệp, nhưng **không** loại bỏ được **rủi ro hệ thống**: khi cả thị trường giảm 30%, danh mục đa dạng vẫn giảm.
+- Điều quan trọng là các mã **ít cùng lên cùng xuống** (khác ngành, khác chu kỳ), không phải số lượng mã. Mười mã cổ phiếu bất động sản vẫn chỉ là một khoản cược.
+
+<Callout type="tip" title="Quy tắc thực hành">
+Khoảng 5–8 mã, thuộc ít nhất 4 ngành, mỗi mã không quá 20–25% vốn. Cách đơn giản nhất để đa dạng hóa là dùng quỹ ETF (bài #7).
+</Callout>
+
+## Quy mô vị thế: mua bao nhiêu là vừa?
+
+Quyết định **trước** mình chấp nhận mất bao nhiêu, thường là **1–2% tổng vốn cho mỗi lệnh**, rồi mới tính số cổ phiếu cần mua.
+
+<Callout type="concept" title="Công thức">
+**Số cổ phiếu = (Vốn × % rủi ro) ÷ (Giá mua − Giá cắt lỗ)**, làm tròn xuống theo lô 100.
+</Callout>
+
+<Callout type="example" title="Tính khối lượng mua">
+Vốn 100 triệu, chấp nhận rủi ro 1% = **1 triệu**. Mua giá 25.000đ, cắt lỗ ở 23.000đ, tức rủi ro 2.000đ mỗi cổ phiếu. Số cổ phiếu = 1.000.000 ÷ 2.000 = **500 cổ phiếu**, giá trị 12,5 triệu (12,5% vốn). Nếu cắt lỗ xa hơn, ở 21.000đ, thì chỉ mua **200 cổ phiếu** (làm tròn xuống từ 250).
+</Callout>
+
+Rủi ro nhỏ cho mỗi lệnh giúp bạn sống sót qua **chuỗi thua**. Mười lệnh thua liên tiếp, mỗi lệnh mất 1%, tài khoản vẫn còn khoảng 90%. Nếu mỗi lệnh mất 10%, tài khoản chỉ còn khoảng 35%.
+
+## Cắt lỗ: phí bảo hiểm cho tài khoản
+
+- Cắt lỗ là **chấp nhận một khoản lỗ nhỏ đã định trước** để tránh một khoản lỗ lớn.
+- **Viết ra điểm cắt lỗ trước khi mua**. Có thể đặt theo vùng hỗ trợ, theo một % cố định, hoặc theo luận điểm ("nếu lợi nhuận quý tới giảm thì bán").
+- Điểm cắt lỗ chỉ được **dời lên** khi giá tăng, **không bao giờ dời xuống**.
+
+<Callout type="warning" title="Bán được đúng giá cắt lỗ là chuyện không chắc">
+Giá mở cửa có thể giảm thẳng qua điểm cắt lỗ của bạn. T+2 có thể khiến bạn chưa bán được, và giảm sàn trắng bên mua có thể giữ chân bạn nhiều phiên. Khi đã chạm điểm cắt lỗ thì cắt **sớm**, đừng chờ "hồi lên một chút".
+</Callout>
+
+## Margin: đòn bẩy hai lưỡi
+
+<Figure caption="Vốn tự có 100 triệu, vay thêm 100 triệu: giá giảm khoảng 16,7% là bị call, khoảng 28,6% là bị bán giải chấp.">
+  <MarginChart />
+</Figure>
+
+<Callout type="concept" title="Tỷ lệ ký quỹ">
+**Tỷ lệ ký quỹ = (Tài sản − Nợ) ÷ Tài sản.** Dưới ngưỡng **call** (40%), bạn phải nộp thêm tiền hoặc bán bớt. Dưới ngưỡng **giải chấp** (30%), công ty chứng khoán tự bán cổ phiếu của bạn để thu nợ.
+</Callout>
+
+<Callout type="example" title="Tính ngưỡng call và giải chấp">
+Vốn 100 triệu, vay thêm 100 triệu, mua 200 triệu cổ phiếu. Bị call khi (A − 100) ÷ A = 40%, tức A = 166,7 triệu: giá giảm **16,7%**. Bị giải chấp khi A = 142,9 triệu: giá giảm **28,6%**. Lúc đó tài sản ròng chỉ còn 42,9 triệu, nghĩa là bạn đã **mất 57% vốn** dù cổ phiếu chỉ giảm chưa tới 30%. Chưa kể lãi vay 13%/năm tính mỗi ngày.
+</Callout>
+
+Tệ nhất là khi cổ phiếu **giảm sàn trắng bên mua**: lệnh giải chấp cũng không khớp được, giá tiếp tục giảm, và khoản lỗ có thể vượt xa mọi tính toán. Cổ phiếu penny thường không được cho vay margin, và đó là có lý do.
+
+## Thanh khoản: mua được chưa chắc bán được
+
+- Giá trên bảng là **giá khớp gần nhất**. Nó không đảm bảo bạn bán được *toàn bộ* cổ phiếu ở giá đó.
+- Đo thanh khoản bằng: **giá trị giao dịch trung bình** mỗi phiên, độ dày của dư mua và dư bán, và **chênh lệch giá mua–bán**.
+- Sổ lệnh mỏng thì lệnh lớn chỉ khớp được một phần, và giá bình quân thấp hơn kỳ vọng.
+
+<Callout type="tip" title="Giữ vị thế nhỏ so với thanh khoản">
+Nếu một mã mỗi phiên chỉ giao dịch khoảng 500 triệu, thì vị thế 300 triệu có thể mất nhiều phiên mới bán hết, nhất là đúng lúc mọi người cùng muốn bán.
+</Callout>
+
+## Use case
+
+<Callout type="usecase" title="Danh mục 100 triệu cho người mới">
+Rủi ro 1% mỗi lệnh, tối đa 5–6 vị thế, mỗi mã không quá 20% vốn, ít nhất 4 ngành, không dùng margin. Một nửa vốn đặt ở quỹ chỉ số làm phần "lõi" (bài #7).
+</Callout>
+
+<Callout type="usecase" title="Đánh giá chiến lược của chính mình">
+Ghi lại từng lệnh. Sau 6 tháng tính tỷ lệ thắng, lãi trung bình, lỗ trung bình và mức sụt lớn nhất. So với việc chỉ mua và giữ VN-Index trong cùng thời gian.
+</Callout>
+
+## Tóm tắt
+
+- Lỗ L% cần lãi L ÷ (1 − L). **Bảo vệ vốn đi trước.**
+- Đa dạng hóa theo **ngành và chu kỳ**, không theo số lượng mã.
+- Tính khối lượng mua từ **mức rủi ro chấp nhận được**, không từ cảm giác "chắc ăn".
+- Cắt lỗ viết ra trước khi mua, chỉ dời lên.
+- Margin vay bằng 100% vốn: giảm khoảng 17% là bị call, khoảng 29% là bị giải chấp.
+
+**Bài tiếp theo:** [Đầu tư #6 — Tâm lý và các bẫy](../dau-tu-6-tam-ly-va-cac-bay/).

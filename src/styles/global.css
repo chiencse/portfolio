@@ -500,3 +500,36 @@ kbd,
   font-variant-ligatures: none;
   font-feature-settings: 'calt' 0, 'liga' 0;
 }
+
+/* Chart series (blog finance posts) */
+.diagram .line-accent,
+.diagram .line-alt,
+.diagram .line-info,
+.diagram .line-warn,
+.diagram .line-muted,
+.diagram .line-up,
+.diagram .line-down {
+  fill: none;
+  stroke-width: 2.25;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.diagram .line-accent { stroke: var(--accent); }
+.diagram .line-alt { stroke: var(--accent-2); }
+.diagram .line-info { stroke: var(--accent-3); }
+.diagram .line-warn { stroke: #f59e0b; }
+.diagram .line-muted { stroke: var(--muted); }
+.diagram .line-up { stroke: #16a34a; }
+.diagram .line-down { stroke: #ef4444; }
+.diagram .grid { stroke: var(--line); stroke-width: 1; }
+.diagram .swatch-accent { fill: var(--accent); }
+.diagram .swatch-alt { fill: var(--accent-2); }
+.diagram .swatch-info { fill: var(--accent-3); }
+.diagram .swatch-warn { fill: #f59e0b; }
+.diagram .swatch-muted { fill: var(--muted); }
+.diagram .fill-up { fill: #16a34a; }
+.diagram .fill-down { fill: #ef4444; }
+.diagram .fill-ceil { fill: #c026d3; }
+.diagram .fill-floor { fill: #0ea5e9; }
+.diagram .fill-ref { fill: #d97706; }
+.diagram .band { fill: var(--surface-2); }

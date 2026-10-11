@@ -1,0 +1,23 @@
+---
+import LineChart from './LineChart.astro';
+const years = 30;
+const grow = (r: number) => Array.from({ length: years + 1 }, (_, t) => 100 * (1 + r) ** t);
+const fmt = (v: number) => `${Math.round(v).toLocaleString('vi-VN')} tr`;
+const savings = grow(0.055);
+const invest = grow(0.1);
+const investFees = grow(0.08);
+---
+
+<LineChart
+  label="100 triệu sau 30 năm: tiết kiệm 5,5%, đầu tư 10%, và 10% nhưng mất 2% phí mỗi năm"
+  height={320}
+  yMin={0}
+  yMax={1800}
+  series={[
+    { name: 'Đầu tư 10%/năm', values: invest, cls: 'accent', end: fmt(invest[years]) },
+    { name: '10% nhưng mất 2% phí', values: investFees, cls: 'warn', end: fmt(investFees[years]) },
+    { name: 'Tiết kiệm 5,5%/năm', values: savings, cls: 'info', end: fmt(savings[years]) },
+  ]}
+  xTicks={[0, 5, 10, 15, 20, 25, 30].map((i) => ({ i, label: `năm ${i}` }))}
+  yTicks={[0, 400, 800, 1200, 1600].map((v) => ({ v, label: `${v}tr` }))}
+/>

@@ -1,0 +1,115 @@
+---
+title: 'Đầu tư #2 — Cơ chế giao dịch: bảng giá, phiên ATO/ATC, loại lệnh, T+2, phí và thuế'
+description: Đọc bảng giá điện tử, hiểu một phiên HOSE chạy thế nào, đặt lệnh LO/MP/ATO/ATC, bước giá, lô 100, T+2 — và vì sao mua rồi bán ngay cùng giá đã mất khoảng 0,4%.
+pubDate: 2026-10-11T09:00:00+07:00
+tags: [dau-tu, chung-khoan]
+---
+
+import Figure from '@/components/blog/Figure.astro';
+import Callout from '@/components/blog/Callout.astro';
+import PriceBoard from '@/components/diagrams/PriceBoard.astro';
+import TradingSession from '@/components/diagrams/TradingSession.astro';
+import T2Timeline from '@/components/diagrams/T2Timeline.astro';
+
+<Callout type="warning" title="Nội dung giáo dục">
+Không phải khuyến nghị đầu tư. Quy tắc trong bài theo sàn HOSE. Phí và một số quy định cụ thể (margin, ứng trước tiền) tùy công ty chứng khoán, nên hãy kiểm tra lại với nơi bạn mở tài khoản.
+</Callout>
+
+Bài [#1](../dau-tu-1-nhap-mon/) trả lời *vì sao* đầu tư. Bài này trả lời *làm thế nào*: những quy tắc "luật chơi" mà người mới hay vấp nhất.
+
+## Đọc bảng giá điện tử
+
+<Figure caption="Bảng giá mô phỏng với các mã giả lập. Giá tính theo nghìn đồng: 25.40 nghĩa là 25.400 đ/cổ phiếu.">
+  <PriceBoard />
+</Figure>
+
+- **Tham chiếu (vàng)**: giá đóng cửa phiên trước, là mốc để tính trần và sàn.
+- **Trần (tím)** và **sàn (xanh lam)**: trên HOSE cách tham chiếu ±7%. Giá trong phiên không thể vượt ra ngoài khoảng này.
+- **Xanh lá / đỏ**: cao hơn / thấp hơn tham chiếu.
+- **Dư mua / dư bán**: các lệnh đang chờ khớp. Muốn **mua ngay** thì bạn phải trả giá ở cột "Bán giá 1"; muốn **bán ngay** thì nhận giá ở cột "Mua giá 1".
+
+<Callout type="warning" title="Trắng bên mua">
+Cổ phiếu giảm sàn mà không có ai đặt mua, gọi là **trắng bên mua**: bạn muốn bán ở giá sàn cũng không có người mua. Với cổ phiếu thanh khoản thấp, tình trạng này có thể kéo dài nhiều phiên liên tiếp.
+</Callout>
+
+## Một phiên giao dịch HOSE
+
+<Figure caption="Hai giai đoạn khớp định kỳ (ATO, ATC) và hai giai đoạn khớp liên tục trong ngày.">
+  <TradingSession />
+</Figure>
+
+<Callout type="concept" title="Khớp định kỳ vs khớp liên tục">
+**Khớp định kỳ** (ATO, ATC): hệ thống gom tất cả lệnh rồi chọn **một mức giá duy nhất** cho khối lượng khớp lớn nhất. **Khớp liên tục**: lệnh được khớp ngay khi có lệnh đối ứng, ưu tiên **giá tốt hơn**, cùng giá thì ưu tiên **lệnh đặt trước**.
+</Callout>
+
+## Các loại lệnh
+
+| Lệnh | Ghi giá? | Khi nào dùng | Lưu ý |
+| --- | --- | --- | --- |
+| **LO** (giới hạn) | Có | Mặc định cho người mới | Kiểm soát được giá, nhưng có thể không khớp |
+| **MP** (thị trường) | Không | Chỉ trong phiên liên tục, cần khớp ngay | Dễ trượt giá khi sổ lệnh mỏng |
+| **ATO** | Không | Phiên mở cửa | Phần không khớp tự hủy |
+| **ATC** | Không | Phiên đóng cửa | Phần không khớp tự hủy |
+
+Lệnh đặt ngoài giờ giao dịch là lệnh **đặt trước** cho phiên sau. Phần lệnh **đã khớp thì không rút lại được**, nên luôn kiểm tra mã, giá, khối lượng và chiều mua/bán trước khi xác nhận.
+
+## Bước giá, lô và cách tính trần–sàn
+
+- **Bước giá HOSE**: giá dưới 10.000đ thì bước 10đ; từ 10.000 đến 49.950đ thì bước 50đ; từ 50.000đ trở lên thì bước 100đ.
+- **Lô chẵn**: khối lượng là bội số của **100 cổ phiếu**. Lô lẻ (1–99 cổ phiếu) giao dịch riêng.
+- **Trần = tham chiếu × 1,07** (làm tròn xuống theo bước giá); **sàn = tham chiếu × 0,93** (làm tròn lên).
+
+<Callout type="example" title="Tính trần, sàn">
+Tham chiếu 25.000đ: trần = 26.750đ, sàn = 23.250đ. Tham chiếu 8.000đ: trần = 8.560đ, sàn = 7.440đ. Đặt mua 25.030đ sẽ bị từ chối, vì 25.030 không phải bội số của bước giá 50đ.
+</Callout>
+
+## T+2: mua hôm nay, bán được khi nào?
+
+<Figure caption="Trong lúc chờ cổ phiếu về tài khoản, bạn không phản ứng được nếu giá đảo chiều.">
+  <T2Timeline />
+</Figure>
+
+- Mua ngày T, cổ phiếu về tài khoản **trưa ngày T+2**, bán được từ **phiên chiều T+2**. Chỉ tính ngày làm việc.
+- Trong lúc chờ, cổ phiếu có thể giảm sàn hai phiên liền: 0,93 × 0,93 ≈ 0,865, tức **mất khoảng 13,5%** mà bạn không bán được.
+- Tiền bán cổ phiếu dùng được ngay để mua mã khác. Muốn rút tiền về sớm thì phải **ứng trước** và trả phí.
+
+## Phí và thuế: chi phí âm thầm
+
+| Khoản | Mức (tham khảo) |
+| --- | --- |
+| Phí giao dịch | khoảng 0,15% giá trị mỗi chiều mua và bán (thực tế 0–0,35%, tùy công ty) |
+| Thuế thu nhập cá nhân khi bán | **0,1% giá trị bán, kể cả khi bán lỗ** |
+| Thuế cổ tức tiền mặt | 5% |
+
+> Mua rồi bán ngay cùng giá: 0,15% + 0,15% + 0,1% ≈ **0,4%** vốn đã mất.
+
+<Callout type="example" title="Giá bán hòa vốn">
+Mua 1.000 cổ phiếu giá 25.000đ, giá vốn tính cả phí mua là 25.000 × 1,0015 = 25.037,5đ/cổ phiếu. Khi bán, bạn nhận về 99,75% giá trị (trừ phí 0,15% và thuế 0,1%). Giá hòa vốn ≈ 25.037,5 ÷ 0,9975 ≈ 25.100đ, làm tròn lên theo bước giá thành **25.150đ**. Cổ phiếu phải tăng hơn 0,6% bạn mới bắt đầu có lãi.
+</Callout>
+
+Giao dịch càng dày thì chi phí càng lớn. Quay vòng vốn 2 lần mỗi tháng nghĩa là 24 vòng mỗi năm × 0,4% ≈ **9,6% vốn mỗi năm**, cao hơn cả lãi tiết kiệm. Bài #6 sẽ quay lại chuyện này.
+
+## Mở tài khoản và chuẩn bị cho lệnh đầu tiên
+
+- Chọn công ty chứng khoán theo **uy tín, độ ổn định của ứng dụng và biểu phí rõ ràng**. Lãi suất margin chỉ quan trọng nếu bạn định vay.
+- Mở tài khoản trực tuyến bằng eKYC. Cần phân biệt **sức mua** (tiền dùng được để mua) với **NAV** (tổng tài sản ròng).
+- **Không bao giờ** chia sẻ mật khẩu hay OTP. Tránh xa các nhóm "phím hàng" và lời mời "quản lý tài khoản hộ".
+
+## Use case
+
+<Callout type="usecase" title="Đặt lệnh đầu tiên an toàn">
+Dùng lệnh LO ở mức giá bạn chấp nhận được, khối lượng nhỏ (vài lô). Ghi trước giá cắt lỗ (bài #5). Chấp nhận khả năng lệnh không khớp, thay vì dùng MP rồi bị khớp giá cao.
+</Callout>
+
+<Callout type="usecase" title="Muốn nhận cổ tức">
+Phải sở hữu cổ phiếu **trước ngày giao dịch không hưởng quyền (GDKHQ)**. Mua trước ngày đó, kể cả khi cổ phiếu còn đang chờ về theo T+2, là đủ điều kiện. Nhưng đừng quên giá tham chiếu sẽ bị điều chỉnh giảm đúng bằng cổ tức (bài #3).
+</Callout>
+
+## Tóm tắt
+
+- Bảng giá: tham chiếu, trần, sàn ±7% trên HOSE. Coi chừng "trắng bên mua".
+- Phiên giao dịch: ATO → khớp liên tục → ATC. LO là lệnh mặc định an toàn.
+- Bước giá theo vùng giá, lô 100. Cổ phiếu về trưa T+2.
+- Mỗi vòng mua–bán tốn khoảng 0,4%: giao dịch ít hơn thường là giao dịch tốt hơn.
+
+**Bài tiếp theo:** [Đầu tư #3 — Phân tích cơ bản và các chỉ số](../dau-tu-3-phan-tich-co-ban/).

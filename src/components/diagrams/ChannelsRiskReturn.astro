@@ -1,0 +1,41 @@
+---
+// Qualitative positions only — the post explains there are no fixed numbers.
+const points = [
+  { name: 'Tiết kiệm', x: 0.06, y: 0.14, cls: 'box-info' },
+  { name: 'Quỹ tiền tệ', x: 0.12, y: 0.12, cls: 'box-info' },
+  { name: 'Trái phiếu', x: 0.24, y: 0.26, cls: 'box-info' },
+  { name: 'Vàng', x: 0.46, y: 0.32, cls: 'box' },
+  { name: 'Quỹ cân bằng', x: 0.42, y: 0.46, cls: 'box-alt' },
+  { name: 'Bất động sản', x: 0.56, y: 0.55, cls: 'box' },
+  { name: 'Quỹ chỉ số / ETF', x: 0.62, y: 0.66, cls: 'box-accent' },
+  { name: 'Cổ phiếu riêng lẻ', x: 0.78, y: 0.76, cls: 'box-alt' },
+  { name: 'Penny / margin', x: 0.93, y: 0.5, cls: 'box-warn' },
+];
+const L = 70, R = 700, T = 20, B = 270;
+const px = (v: number) => L + v * (R - L);
+const py = (v: number) => B - v * (B - T);
+---
+
+<svg viewBox="0 0 720 310" role="img" aria-label="Các kênh đầu tư xếp theo mức biến động và lợi nhuận kỳ vọng">
+  <defs>
+    <marker id="crr-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head"></path>
+    </marker>
+  </defs>
+  <line x1={L} y1={B} x2={R + 6} y2={B} class="edge" marker-end="url(#crr-arrow)"></line>
+  <line x1={L} y1={B} x2={L} y2={T - 6} class="edge" marker-end="url(#crr-arrow)"></line>
+  <text x={R} y={B + 26} text-anchor="end" class="s">rủi ro / biến động →</text>
+  <text x={L - 12} y={T + 4} text-anchor="end" class="s" transform={`rotate(-90 ${L - 12} ${T + 4})`}>← lợi nhuận kỳ vọng</text>
+  <line x1={px(0.05)} y1={py(0.1)} x2={px(0.85)} y2={py(0.82)} class="edge-accent dashed"></line>
+  {
+    points.map((p) => (
+      <g>
+        <rect x={px(p.x) - 58} y={py(p.y) - 14} width="116" height="28" rx="14" class={p.cls} />
+        <text x={px(p.x)} y={py(p.y) + 5} text-anchor="middle" class="c">
+          {p.name}
+        </text>
+      </g>
+    ))
+  }
+  <text x={px(0.93)} y={py(0.5) + 32} text-anchor="middle" class="s fill-warn">rủi ro cao, kỳ vọng không tương xứng</text>
+</svg>

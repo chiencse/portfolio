@@ -1,0 +1,31 @@
+---
+import LineChart from './LineChart.astro';
+import { PRICES, sma } from './techSeries';
+const ma20 = sma(PRICES, 20);
+const ma50 = sma(PRICES, 50);
+const sideways = PRICES.slice(75);
+const resistance = Math.max(...sideways);
+const support = Math.min(...sideways);
+---
+
+<LineChart
+  label="Giá giả lập với MA20, MA50 và vùng hỗ trợ, kháng cự khi giá đi ngang"
+  height={320}
+  yMin={26}
+  yMax={48}
+  bands={[
+    { from: 0, to: 70, label: 'xu hướng tăng: đỉnh & đáy nâng dần' },
+    { from: 75, to: 119, label: 'đi ngang' },
+  ]}
+  series={[
+    { name: 'Giá đóng cửa', values: PRICES, cls: 'muted' },
+    { name: 'MA20', values: ma20, cls: 'accent' },
+    { name: 'MA50', values: ma50, cls: 'alt' },
+  ]}
+  hLines={[
+    { v: resistance, label: 'kháng cự', cls: 'line-down' },
+    { v: support, label: 'hỗ trợ', cls: 'line-up' },
+  ]}
+  xTicks={[0, 20, 40, 60, 80, 100, 119].map((i) => ({ i, label: `${i}` }))}
+  yTicks={[28, 32, 36, 40, 44].map((v) => ({ v, label: `${v}` }))}
+/>

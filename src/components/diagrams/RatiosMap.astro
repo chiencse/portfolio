@@ -1,0 +1,81 @@
+---
+const inputs = [
+  { k: 'Giá', v: '60.000 đ' },
+  { k: 'LN ròng', v: '500 tỷ' },
+  { k: 'Số cổ phiếu', v: '100 triệu' },
+  { k: 'Vốn chủ', v: '3.000 tỷ' },
+  { k: 'Nợ vay', v: '1.500 tỷ' },
+];
+const mids = [
+  { k: 'EPS', f: 'LN ròng ÷ số CP', v: '5.000 đ', y: 74 },
+  { k: 'BVPS', f: 'Vốn chủ ÷ số CP', v: '30.000 đ', y: 160 },
+];
+const outs = [
+  { k: 'P/E', f: 'Giá ÷ EPS', v: '12 lần', y: 20 },
+  { k: 'P/B', f: 'Giá ÷ BVPS', v: '2,0 lần', y: 86 },
+  { k: 'ROE', f: 'LN ròng ÷ Vốn chủ', v: '16,7%', y: 152 },
+  { k: 'D/E', f: 'Nợ vay ÷ Vốn chủ', v: '0,5 lần', y: 218 },
+];
+---
+
+<svg viewBox="0 0 720 286" role="img" aria-label="Từ số liệu báo cáo tài chính của Công ty A tính ra EPS, BVPS, P/E, P/B, ROE và D/E">
+  <defs>
+    <marker id="rm-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head"></path>
+    </marker>
+  </defs>
+  <text x="96" y="14" text-anchor="middle" class="s mono fill-accent">CÔNG TY A</text>
+  {
+    inputs.map((it, i) => (
+      <g>
+        <rect x="16" y={24 + i * 50} width="160" height="40" rx="8" class="box" />
+        <text x="28" y={49 + i * 50} class="s">
+          {it.k}
+        </text>
+        <text x="166" y={49 + i * 50} text-anchor="end" class="c mono">
+          {it.v}
+        </text>
+      </g>
+    ))
+  }
+  {
+    mids.map((m) => (
+      <g>
+        <rect x="236" y={m.y} width="180" height="58" rx="10" class="box-info" />
+        <text x="252" y={m.y + 24} class="t mono">
+          {m.k}
+        </text>
+        <text x="400" y={m.y + 24} text-anchor="end" class="c mono">
+          {m.v}
+        </text>
+        <text x="252" y={m.y + 44} class="s">
+          {m.f}
+        </text>
+      </g>
+    ))
+  }
+  {
+    outs.map((o) => (
+      <g>
+        <rect x="476" y={o.y} width="228" height="56" rx="10" class="box-accent" />
+        <text x="492" y={o.y + 24} class="t mono">
+          {o.k}
+        </text>
+        <text x="688" y={o.y + 24} text-anchor="end" class="c mono">
+          {o.v}
+        </text>
+        <text x="492" y={o.y + 43} class="s">
+          {o.f}
+        </text>
+      </g>
+    ))
+  }
+  <line x1="176" y1="94" x2="234" y2="100" class="edge" marker-end="url(#rm-arrow)"></line>
+  <line x1="176" y1="144" x2="234" y2="106" class="edge" marker-end="url(#rm-arrow)"></line>
+  <line x1="176" y1="194" x2="234" y2="186" class="edge" marker-end="url(#rm-arrow)"></line>
+  <line x1="416" y1="102" x2="474" y2="48" class="edge" marker-end="url(#rm-arrow)"></line>
+  <line x1="416" y1="190" x2="474" y2="114" class="edge" marker-end="url(#rm-arrow)"></line>
+  <line x1="176" y1="44" x2="474" y2="40" class="edge dashed" marker-end="url(#rm-arrow)"></line>
+  <line x1="176" y1="244" x2="474" y2="246" class="edge dashed" marker-end="url(#rm-arrow)"></line>
+  <text x="360" y="278" text-anchor="middle" class="s">Kiểm tra chéo: P/E = P/B ÷ ROE = 2,0 ÷ 16,7% ≈ 12</text>
+</svg>

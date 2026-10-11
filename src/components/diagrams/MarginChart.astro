@@ -1,0 +1,24 @@
+---
+import LineChart from './LineChart.astro';
+// Own 100, borrow 100 → assets 200. Ratio = (assets − debt) / assets.
+const drops = Array.from({ length: 36 }, (_, d) => d);
+const ratio = drops.map((d) => {
+  const assets = 200 * (1 - d / 100);
+  return Math.max(((assets - 100) / assets) * 100, 0);
+});
+---
+
+<LineChart
+  label="Tỷ lệ ký quỹ khi giá cổ phiếu giảm, với vốn tự có 100 triệu và vay thêm 100 triệu"
+  height={300}
+  yMin={0}
+  yMax={55}
+  legend={false}
+  series={[{ name: 'Tỷ lệ ký quỹ', values: ratio, cls: 'accent' }]}
+  hLines={[
+    { v: 40, label: '40% · call margin', cls: 'line-warn' },
+    { v: 30, label: '30% · bán giải chấp', cls: 'line-down' },
+  ]}
+  xTicks={[0, 5, 10, 15, 20, 25, 30, 35].map((i) => ({ i, label: `−${i}%` }))}
+  yTicks={[0, 10, 20, 30, 40, 50].map((v) => ({ v, label: `${v}%` }))}
+/>

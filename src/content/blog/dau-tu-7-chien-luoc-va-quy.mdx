@@ -1,0 +1,137 @@
+---
+title: 'Đầu tư #7 — Chiến lược dài hạn và quỹ: lướt sóng vs dài hạn, DCA, ETF, quỹ mở, phí quỹ, SIP'
+description: So sánh thẳng thắn lướt sóng và đầu tư dài hạn, DCA khác trung bình giá xuống ở đâu, quỹ mở và ETF hoạt động thế nào, phí 1%/năm "ăn" bao nhiêu sau 20 năm, và cách lập kế hoạch cho người bận rộn.
+pubDate: 2026-10-11T14:00:00+07:00
+tags: [dau-tu, tai-chinh, chung-khoan]
+---
+
+import Figure from '@/components/blog/Figure.astro';
+import Callout from '@/components/blog/Callout.astro';
+import FeeDrag from '@/components/diagrams/FeeDrag.astro';
+import EtfMechanism from '@/components/diagrams/EtfMechanism.astro';
+
+<Callout type="warning" title="Nội dung giáo dục">
+Không phải khuyến nghị đầu tư hay khuyến nghị quỹ cụ thể. Bài không nêu tên quỹ thật. Mức phí trong bài là các mức "thường gặp", còn thực tế thì tùy từng quỹ. Muốn có kế hoạch cá nhân, hãy tìm chuyên gia tư vấn được cấp phép.
+</Callout>
+
+Sáu bài trước đã cho thấy chọn cổ phiếu riêng lẻ khó đến mức nào: phải phân tích, quản trị rủi ro, và chống lại chính tâm lý của mình. Bài cuối nói về những cách tiếp cận **phù hợp với số đông**: kiên nhẫn, kỷ luật, chi phí thấp.
+
+## Lướt sóng hay dài hạn?
+
+| | Lướt sóng | Đầu tư dài hạn |
+| --- | --- | --- |
+| Kiếm tiền từ | Chênh lệch giá ngắn hạn | Tăng trưởng lợi nhuận và cổ tức |
+| Chi phí mỗi năm | 50 vòng ≈ **20% vốn** | Dưới 1% |
+| Thời gian bỏ ra | Canh bảng giá mỗi ngày | Vài giờ mỗi quý |
+| Lợi thế | Rất mỏng | Thời gian và lãi kép |
+| Rủi ro chính | Chi phí, cảm xúc | Drawdown sâu, chọn nhầm doanh nghiệp xấu |
+
+Lợi thế của người lướt sóng rất mong manh: tỷ lệ thắng chỉ cần giảm từ 50% xuống 45% là một chiến lược đang hòa vốn có thể trở thành **lỗ khoảng 22% mỗi năm** sau phí.
+
+<Callout type="concept" title="Mô hình lõi – vệ tinh">
+**Lõi** (ví dụ 70–80%): quỹ chỉ số hoặc ETF, nắm giữ dài hạn, mua định kỳ. **Vệ tinh** (20–30%): tự chọn cổ phiếu hoặc luyện kỹ năng ngắn hạn, trong giới hạn rủi ro đã đặt. Sai ở phần vệ tinh không làm hỏng kế hoạch chung.
+</Callout>
+
+## Mua và giữ: kiên nhẫn có điều kiện
+
+- Về dài hạn, giá cổ phiếu đi theo lợi nhuận doanh nghiệp: **tổng lợi nhuận ≈ tăng trưởng lợi nhuận + cổ tức + thay đổi P/E**.
+- Người mua và giữ phải chịu được **drawdown 30–40%** mà không bán tháo.
+- **Bán** khi luận điểm đầu tư đã sai hoặc định giá trở nên vô lý. **Không bán** chỉ vì giá dao động hay vì tin đồn.
+
+<Callout type="warning" title="Mua và giữ khác với gồng lỗ">
+Giữ một doanh nghiệp **đang xấu đi** (lợi nhuận giảm nhiều quý, nợ tăng, dòng tiền âm) thì không phải là mua và giữ. Đó là gồng lỗ, chỉ được gọi bằng một cái tên dễ nghe hơn.
+</Callout>
+
+## DCA: đầu tư đều đặn mỗi tháng
+
+<Callout type="concept" title="DCA (Dollar-Cost Averaging)">
+Bỏ **một số tiền cố định** vào thị trường **theo lịch định kỳ**, bất kể giá đang lên hay xuống.
+</Callout>
+
+<Callout type="example" title="Vì sao giá vốn bình quân thấp hơn">
+Mỗi tháng mua 3 triệu chứng chỉ quỹ. Tháng 1 giá 30.000đ, mua được 100 đơn vị. Tháng 2 giá 20.000đ, mua được 150. Tháng 3 giá 25.000đ, mua được 120. Tổng 9 triệu được 370 đơn vị, giá vốn bình quân ≈ **24.324đ**, thấp hơn trung bình cộng ba mức giá là 25.000đ. Lý do: lúc giá thấp, cùng số tiền mua được nhiều hơn.
+</Callout>
+
+- Khi thị trường tăng đều, bỏ tiền **một lần** thường thắng DCA. Giá trị lớn nhất của DCA là **kỷ luật**: không phải đoán đáy, không bỏ cuộc giữa chừng.
+- DCA **theo kế hoạch vào một danh mục đa dạng** khác hẳn việc **trung bình giá xuống một mã đang lỗ** (bài #6).
+
+## Quỹ đầu tư: các loại và khác biệt
+
+| Loại | Mua bán ở đâu | Giá | Đặc điểm |
+| --- | --- | --- | --- |
+| **Quỹ mở** | Trực tiếp với quỹ, qua đại lý phân phối | NAV/CCQ tính **sau** khi đóng sổ lệnh | Không biết chính xác giá lúc đặt lệnh |
+| **Quỹ đóng** | Trên sàn | Có thể chênh lệch (thường thấp hơn) so với NAV | Số CCQ cố định, hiếm ở Việt Nam hiện nay |
+| **ETF** | Trên sàn, như cổ phiếu | Giá thị trường, thường bám sát NAV | Mô phỏng một chỉ số |
+
+- **NAV/CCQ** = (tổng tài sản quỹ − nợ) ÷ số chứng chỉ quỹ đang lưu hành.
+- Tài sản quỹ được lưu ký tại **ngân hàng giám sát**, tách biệt với tài sản của công ty quản lý quỹ.
+- Các loại quỹ mở: **tiền tệ** (cho tiền cần trong vài tháng), **trái phiếu** (vài năm), **cân bằng**, **cổ phiếu** (từ 5 năm trở lên). Có thể là **chủ động** (người quản lý chọn mã) hoặc **chỉ số** (thụ động, mô phỏng theo một chỉ số).
+
+### ETF hoạt động thế nào?
+
+<Figure caption="Thành viên lập quỹ (AP) hoán đổi lô lớn chứng chỉ quỹ với rổ cổ phiếu, nhờ đó giá ETF trên sàn bám sát NAV.">
+  <EtfMechanism />
+</Figure>
+
+- ETF giao dịch như cổ phiếu: lô 100, biên độ ±7%, **bước giá 10đ**, T+2, phí môi giới cộng thuế bán 0,1%.
+- **iNAV** là NAV tham chiếu, được cập nhật liên tục trong phiên. Khi thị trường bán tháo, giá ETF có thể thấp hơn NAV khoảng 1–2%.
+- **Tracking error** (sai lệch so với chỉ số) đến từ phí, lượng tiền mặt tồn và việc cơ cấu danh mục. Khi chỉ số được cơ cấu lại định kỳ, ETF cũng phải mua bán theo.
+
+## Phí quỹ: lãi kép theo chiều ngược lại
+
+<Figure caption="Cùng lợi suất gộp 10%/năm, 100 triệu sau 20 năm: chênh lệch phí 0,5% và 2% là khoảng 147 triệu.">
+  <FeeDrag />
+</Figure>
+
+| Loại phí | Mức thường gặp |
+| --- | --- |
+| Phí mua (phát hành) | 0–1,5%, nhiều quỹ 0% |
+| Phí bán (mua lại) | Giảm dần theo thời gian giữ, ví dụ 1–2% nếu dưới 12 tháng, 0% sau 24 tháng |
+| Phí quản lý | Trừ dần vào NAV: quỹ cổ phiếu chủ động khoảng 1,5–2%/năm, quỹ chỉ số thấp hơn |
+| Thuế khi bán chứng chỉ quỹ | 0,1% giá trị bán |
+
+Phí 1%/năm nghe có vẻ nhỏ, nhưng sau 20 năm nó lấy đi khoảng **17%** thành quả (560 triệu so với 673 triệu). Phí 2%/năm lấy đi khoảng **31%**.
+
+## Chủ động hay thụ động?
+
+- Trên thế giới, các thống kê dài hạn (ví dụ báo cáo SPIVA) cho thấy **đa số** quỹ chủ động thua chỉ số tham chiếu sau 10–15 năm, chủ yếu vì phí và vì thành công rất khó lặp lại.
+- Ở Việt Nam, thị trường còn trẻ. Một số quỹ chủ động từng thắng VN-Index nhiều năm, một phần vì VN-Index bị chi phối bởi vài mã vốn hóa lớn. Nhưng **kết quả quá khứ không đảm bảo tương lai**.
+- Cách dùng thực tế: lấy **VN-Index làm thước đo**. Nếu nhiều năm liền bạn (hoặc quỹ bạn chọn) vẫn thua chỉ số, thì đầu tư theo chỉ số là lựa chọn đáng cân nhắc.
+
+## Chọn quỹ và lập kế hoạch
+
+Đọc **bản cáo bạch** và **báo cáo hằng tháng (factsheet)** của quỹ: mục tiêu đầu tư, chiến lược, top 10 khoản đầu tư, biểu phí, lợi nhuận từng giai đoạn **so với chỉ số tham chiếu**, mức sụt giảm lớn nhất, quy mô quỹ, người điều hành.
+
+<Callout type="concept" title="Phân bổ tài sản và tái cân bằng">
+Chia tiền theo **mục tiêu và thời gian**: tiền cần trong vài tháng để ở quỹ tiền tệ, tiền cần sau vài năm để ở trái phiếu, tiền dài hạn từ 5 năm trở lên để ở cổ phiếu. Định kỳ (ví dụ mỗi năm) **tái cân bằng** về tỷ lệ ban đầu: bán bớt phần đã tăng nhiều, mua thêm phần đang tụt lại.
+</Callout>
+
+**SIP** (Systematic Investment Plan) là đăng ký mua quỹ một số tiền cố định mỗi tháng, tức là DCA được tự động hóa. Nhiều quỹ ở Việt Nam có chương trình này.
+
+## Use case
+
+<Callout type="usecase" title="Người bận rộn: 20 triệu ban đầu và 5 triệu mỗi tháng">
+Kịch bản "fund-path" trong Sàn Tập: trong 3 năm, so sánh **gửi tiết kiệm** với **mua quỹ chỉ số mỗi lần nạp tiền** và **quỹ chủ động**, với cùng lịch nạp tiền. Bài học không nằm ở chuyện bên nào thắng trong 3 năm. Bài học là người theo kế hoạch không bỏ cuộc giữa chừng lúc thị trường giảm.
+</Callout>
+
+<Callout type="usecase" title="Mục tiêu mua nhà sau 2 năm">
+Tiền cho mục tiêu ngắn hạn như vậy để ở quỹ tiền tệ hoặc trái phiếu, không để ở cổ phiếu. Sụt 30% đúng năm cần tiền là rủi ro không đáng nhận.
+</Callout>
+
+## Kế hoạch đầu tư cá nhân: tổng kết cả series
+
+1. **Nền móng**: quỹ dự phòng 3–6 tháng chi tiêu, trả nợ lãi cao, bảo hiểm cơ bản (bài #1).
+2. Chỉ đầu tư **tiền nhàn rỗi 3–5 năm**, không vay để đầu tư khi đang học.
+3. **Lõi**: quỹ chỉ số hoặc ETF, mua định kỳ. **Vệ tinh**: cổ phiếu tự chọn, đã phân tích (bài #3, #4), với quy tắc rủi ro rõ ràng (bài #5).
+4. **Viết bộ quy tắc cá nhân** ra giấy và luyện trên trình mô phỏng vài tháng (bài #6), rồi mới bắt đầu nhỏ với tiền thật.
+5. Đánh giá định kỳ so với **VN-Index và lãi tiết kiệm**.
+
+## Tóm tắt
+
+- Lướt sóng có chi phí cao và lợi thế mỏng. Dài hạn thì cần chịu được drawdown.
+- **DCA/SIP** đổi việc đoán thị trường lấy kỷ luật.
+- Quỹ mở giao dịch theo NAV, ETF giao dịch trên sàn và bám NAV nhờ thành viên lập quỹ.
+- **Phí là thứ duy nhất chắc chắn**, và nó cũng được lãi kép.
+- Lõi chi phí thấp, vệ tinh có giới hạn, quy tắc viết ra giấy.
+
+Cảm ơn bạn đã đọc hết series. Quay lại [bài #1](../dau-tu-1-nhap-mon/) nếu muốn xem lại từ đầu.

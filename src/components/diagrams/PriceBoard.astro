@@ -1,0 +1,45 @@
+---
+// Mock HOSE price board — fictional tickers. Prices in thousand VND.
+const cols = [
+  { k: 'Mã', w: 60 }, { k: 'TC', w: 58 }, { k: 'Trần', w: 58 }, { k: 'Sàn', w: 58 },
+  { k: 'Mua G2', w: 62 }, { k: 'KL', w: 54 }, { k: 'Mua G1', w: 62 }, { k: 'KL', w: 54 },
+  { k: 'Khớp', w: 62 }, { k: '+/−', w: 52 }, { k: 'Bán G1', w: 62 }, { k: 'KL', w: 54 },
+];
+type Cell = [string, string?];
+const rows: Cell[][] = [
+  [['AAA', 'fill-up'], ['25.00', 'fill-ref'], ['26.75', 'fill-ceil'], ['23.25', 'fill-floor'], ['25.35', 'fill-up'], ['8,200'], ['25.40', 'fill-up'], ['5,100'], ['25.40', 'fill-up'], ['+0.40', 'fill-up'], ['25.45', 'fill-up'], ['3,600']],
+  [['BBB', 'fill-floor'], ['8.00', 'fill-ref'], ['8.56', 'fill-ceil'], ['7.44', 'fill-floor'], ['—'], ['—'], ['—'], ['—'], ['7.44', 'fill-floor'], ['−0.56', 'fill-floor'], ['7.44', 'fill-floor'], ['1,250,000']],
+  [['CCC', 'fill-ceil'], ['30.00', 'fill-ref'], ['32.10', 'fill-ceil'], ['27.90', 'fill-floor'], ['32.05', 'fill-up'], ['12,000'], ['32.10', 'fill-ceil'], ['486,000'], ['32.10', 'fill-ceil'], ['+2.10', 'fill-ceil'], ['—'], ['—']],
+];
+const xs = cols.reduce<number[]>((acc, c, i) => [...acc, i === 0 ? 12 : acc[i - 1] + cols[i - 1].w], []);
+---
+
+<svg viewBox="0 0 720 268" role="img" aria-label="Bảng giá mô phỏng với giá tham chiếu, trần, sàn, dư mua, dư bán và giá khớp">
+  <rect x="12" y="12" width="696" height="34" rx="8" class="box"></rect>
+  {
+    cols.map((c, i) => (
+      <text x={xs[i] + c.w / 2} y="34" text-anchor="middle" class="s">
+        {c.k}
+      </text>
+    ))
+  }
+  {
+    rows.map((row, r) => (
+      <g>
+        <rect x="12" y={54 + r * 40} width="696" height="34" rx="8" class="box-ghost" />
+        {row.map(([v, cls], i) => (
+          <text x={xs[i] + cols[i].w / 2} y={76 + r * 40} text-anchor="middle" class={`c mono ${cls ?? ''}`}>
+            {v}
+          </text>
+        ))}
+      </g>
+    ))
+  }
+  <circle cx="24" cy="194" r="5" class="fill-ref"></circle><text x="34" y="198" class="s">Tham chiếu</text>
+  <circle cx="124" cy="194" r="5" class="fill-ceil"></circle><text x="134" y="198" class="s">Trần (+7%)</text>
+  <circle cx="224" cy="194" r="5" class="fill-floor"></circle><text x="234" y="198" class="s">Sàn (−7%)</text>
+  <circle cx="314" cy="194" r="5" class="fill-up"></circle><text x="324" y="198" class="s">Tăng</text>
+  <circle cx="384" cy="194" r="5" class="fill-down"></circle><text x="394" y="198" class="s">Giảm</text>
+  <text x="12" y="230" class="s"><tspan class="c">BBB</tspan> giảm sàn, không ai đặt mua: “trắng bên mua” — muốn bán cũng không bán được.</text>
+  <text x="12" y="252" class="s"><tspan class="c">CCC</tspan> tăng trần, không ai đặt bán: “trắng bên bán” — muốn mua cũng không mua được.</text>
+</svg>

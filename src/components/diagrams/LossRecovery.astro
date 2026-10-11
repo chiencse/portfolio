@@ -1,0 +1,30 @@
+---
+const losses = [10, 20, 30, 40, 50, 70, 90];
+const CAP = 300; // % — bars beyond this are truncated
+const L = 150, R = 640;
+const scale = (pct: number) => (Math.min(pct, CAP) / CAP) * (R - L);
+const fmt = (v: number) => (v >= 100 ? Math.round(v) : v.toFixed(1).replace('.', ',')) + '%';
+---
+
+<svg viewBox="0 0 720 330" role="img" aria-label="Lỗ bao nhiêu phần trăm thì cần lãi bao nhiêu để hòa vốn">
+  <text x="140" y="22" text-anchor="end" class="s">Lỗ</text>
+  <text x={L} y="22" class="s">Cần lãi để hòa vốn = L ÷ (1 − L)</text>
+  {
+    losses.map((l, i) => {
+      const need = (l / (100 - l)) * 100;
+      const y = 40 + i * 40;
+      return (
+        <g>
+          <text x="140" y={y + 19} text-anchor="end" class="c mono fill-down">
+            −{l}%
+          </text>
+          <rect x={L} y={y + 4} width={Math.max(scale(need), 4)} height="24" rx="6" class={need > CAP ? 'box-warn' : 'box-accent'} />
+          <text x={L + Math.max(scale(need), 4) + 8} y={y + 21} class="c mono">
+            +{fmt(need)}
+          </text>
+          {need > CAP && <text x={R - 52} y={y + 21} text-anchor="end" class="s">(cắt bớt)</text>}
+        </g>
+      );
+    })
+  }
+</svg>

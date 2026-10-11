@@ -1,0 +1,22 @@
+---
+import LineChart from './LineChart.astro';
+const years = 20;
+const grow = (r: number) => Array.from({ length: years + 1 }, (_, t) => 100 * (1 + r) ** t);
+const fmt = (v: number) => `${Math.round(v)} tr`;
+const lines = [
+  { name: 'Không phí (10%)', r: 0.1, cls: 'muted' },
+  { name: 'Phí 0,5%/năm', r: 0.095, cls: 'accent' },
+  { name: 'Phí 1%/năm', r: 0.09, cls: 'info' },
+  { name: 'Phí 2%/năm', r: 0.08, cls: 'warn' },
+].map((l) => ({ name: l.name, cls: l.cls, values: grow(l.r), end: fmt(grow(l.r)[years]) }));
+---
+
+<LineChart
+  label="100 triệu sau 20 năm với lợi suất gộp 10%/năm và các mức phí quản lý khác nhau"
+  height={320}
+  yMin={0}
+  yMax={700}
+  series={lines}
+  xTicks={[0, 5, 10, 15, 20].map((i) => ({ i, label: `năm ${i}` }))}
+  yTicks={[0, 200, 400, 600].map((v) => ({ v, label: `${v}tr` }))}
+/>

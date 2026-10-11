@@ -1,0 +1,42 @@
+---
+// HOSE trading day, 9:00 → 15:00 (360 minutes)
+const blocks = [
+  { from: 0, to: 15, name: 'ATO', sub: '9:00–9:15', cls: 'box-alt' },
+  { from: 15, to: 150, name: 'Khớp liên tục', sub: '9:15–11:30', cls: 'box-accent' },
+  { from: 150, to: 240, name: 'Nghỉ trưa', sub: '11:30–13:00', cls: 'box-ghost' },
+  { from: 240, to: 330, name: 'Khớp liên tục', sub: '13:00–14:30', cls: 'box-accent' },
+  { from: 330, to: 345, name: 'ATC', sub: '14:30–14:45', cls: 'box-alt' },
+  { from: 345, to: 360, name: 'TT', sub: '–15:00', cls: 'box' },
+];
+const L = 20, R = 700;
+const x = (m: number) => L + (m / 360) * (R - L);
+---
+
+<svg viewBox="0 0 720 200" role="img" aria-label="Lịch một phiên giao dịch HOSE: ATO, khớp lệnh liên tục, nghỉ trưa, ATC, thỏa thuận">
+  {
+    blocks.map((b) => (
+      <g>
+        <rect x={x(b.from) + 1} y="50" width={x(b.to) - x(b.from) - 2} height="56" rx="8" class={b.cls} />
+        {x(b.to) - x(b.from) > 60 ? (
+          <>
+            <text x={(x(b.from) + x(b.to)) / 2} y="76" text-anchor="middle" class="c">
+              {b.name}
+            </text>
+            <text x={(x(b.from) + x(b.to)) / 2} y="94" text-anchor="middle" class="s mono">
+              {b.sub}
+            </text>
+          </>
+        ) : (
+          <text x={(x(b.from) + x(b.to)) / 2} y="83" text-anchor="middle" class="c">
+            {b.name}
+          </text>
+        )}
+      </g>
+    ))
+  }
+  <text x={x(7)} y="36" text-anchor="middle" class="s fill-alt">1 giá mở cửa</text>
+  <text x={x(337)} y="36" text-anchor="middle" class="s fill-alt">1 giá đóng cửa</text>
+  <text x="360" y="140" text-anchor="middle" class="c">ATO / ATC: gom mọi lệnh rồi chọn một giá khớp được nhiều nhất</text>
+  <text x="360" y="162" text-anchor="middle" class="s">Khớp liên tục: ưu tiên giá tốt hơn, cùng giá thì lệnh đặt trước khớp trước</text>
+  <text x="360" y="184" text-anchor="middle" class="s">Giá đóng cửa (thường từ ATC) thành giá tham chiếu của phiên hôm sau</text>
+</svg>

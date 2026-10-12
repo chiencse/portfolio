@@ -1,0 +1,273 @@
+---
+title: 'Biến trang web thành app có thông báo đẩy: PWA và Web Push tự làm từ A đến Z'
+description: Manifest, service worker, cài app trên Android và iPhone, rồi tự mã hoá thông báo đẩy theo RFC 8291 và ký VAPID bằng Python thuần, không cần pywebpush. Kèm những cái hố mình đã rơi vào khi chạy thật.
+pubDate: 2026-10-12T21:00:00+07:00
+tags: [pwa, web-push, frontend, security]
+---
+
+import Figure from '@/components/blog/Figure.astro';
+import Callout from '@/components/blog/Callout.astro';
+import PwaInstall from '@/components/diagrams/PwaInstall.astro';
+import WebPushFlow from '@/components/diagrams/WebPushFlow.astro';
+
+Mình có một mini-site tĩnh chạy trên laptop ở nhà (Cloudflare Tunnel ra Internet), gồm vài trò thư giãn nhỏ. Đến lúc muốn nó **nằm trên màn hình điện thoại như một app** và **mỗi sáng tự gửi lời chào kèm thời tiết**, mình không viết app iOS/Android nào cả. Chỉ cần thêm vài file vào trang web và khoảng 150 dòng Python phía server.
+
+Bài này đi qua cả lý thuyết lẫn phần thực hành đó.
+
+## PWA là gì, và "cài" thực chất là gì
+
+**PWA (Progressive Web App)** không phải một framework. Nó là tên gọi cho một trang web có đủ ba thứ để trình duyệt chịu "cài" nó như app:
+
+<Figure caption="Đủ manifest, service worker và HTTPS thì trình duyệt coi trang là cài được; cách cài khác nhau giữa Android và iPhone.">
+  <PwaInstall />
+</Figure>
+
+<Callout type="concept" title="Web App Manifest">
+Một file JSON mô tả app: tên, icon, màu nền, trang mở đầu, và quan trọng nhất là `"display": "standalone"`, tức mở toàn màn hình, không có thanh địa chỉ.
+</Callout>
+
+<Callout type="concept" title="Service worker">
+Một file JavaScript **chạy tách khỏi trang**, đứng giữa trang và mạng. Nó chặn được mọi request (để phục vụ bản lưu khi mất mạng), và được hệ điều hành **đánh thức để nhận thông báo đẩy ngay cả khi app đang đóng**.
+</Callout>
+
+<Callout type="concept" title="HTTPS">
+Service worker chỉ chạy trên HTTPS (hoặc `localhost`). Nó có quyền chặn mọi request của trang, nên không thể để kẻ đứng giữa tráo được.
+</Callout>
+
+"Cài" trên mỗi nền tảng làm việc khác nhau:
+
+- **Android + Chrome**: Chrome gửi manifest lên server Google để **đóng gói thành một WebAPK**, một file APK thật được cài vào máy. App hiện trong danh sách ứng dụng, có trang cài đặt riêng, đổi tên/icon trên server thì sau một thời gian tự cập nhật. Bên trong APK chỉ là "mở URL này bằng Chrome, chế độ toàn màn hình".
+- **iPhone + Safari**: "Chia sẻ → Thêm vào MH chính" tạo một **web app** chạy bằng WebKit trong cửa sổ riêng, có bộ nhớ riêng. Từ **iOS 16.4**, chỉ những web app *đã cài ra màn hình chính* mới được nhận thông báo đẩy.
+
+So với app native: không qua cửa hàng, cập nhật bằng cách sửa file trên server, nhẹ vài trăm KB. Đổi lại không chạm được những tính năng sâu như Bluetooth trên iOS, widget hay chạy nền tuỳ ý.
+
+## Thực hành 1: manifest
+
+```json title="public/manifest.webmanifest"
+{
+  "name": "Góc Nhỏ",
+  "short_name": "Góc Nhỏ",
+  "start_url": "/choi/?source=app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#1A1433",
+  "theme_color": "#1A1433",
+  "icons": [
+    {"src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
+```
+
+Rồi trong `<head>` của **mọi trang**:
+
+```html
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Góc Nhỏ">
+<script>
+  if ("serviceWorker" in navigator)
+    addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
+</script>
+```
+
+<Callout type="tip" title="Icon maskable">
+Android cắt icon theo hình của từng hãng (tròn, bo góc, giọt nước). Icon `maskable` phải để nội dung chính trong **vùng an toàn 80% ở giữa**, nền tràn ra hết mép. Mình vẽ icon bằng canvas rồi chụp bằng Chrome headless (`--screenshot --window-size=1024,1024`), sau đó dùng `sips` để ra các cỡ 512, 192 và 180.
+</Callout>
+
+## Thực hành 2: service worker, offline và push
+
+```js title="public/sw.js"
+const CACHE = "goc-nho-v2";
+const PAGES = ["/", "/choi/", "/ve/", "/manifest.webmanifest", "/icons/icon-192.png"];
+
+self.addEventListener("install", e => {
+  e.waitUntil(caches.open(CACHE)
+    .then(c => Promise.all(PAGES.map(u => c.add(u).catch(() => {}))))
+    .then(() => self.skipWaiting()));
+});
+
+self.addEventListener("activate", e => {
+  e.waitUntil(caches.keys()
+    .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+    .then(() => self.clients.claim()));
+});
+
+self.addEventListener("fetch", e => {
+  const req = e.request, url = new URL(req.url);
+  // API và kết nối realtime (SSE) phải đi thẳng ra mạng
+  if (req.method !== "GET" || url.origin !== location.origin || url.pathname.startsWith("/api/")) return;
+  if (req.mode === "navigate") {          // trang: ưu tiên mạng, mất mạng thì dùng bản lưu
+    e.respondWith(fetch(req)
+      .then(res => { const copy = res.clone(); caches.open(CACHE).then(c => c.put(url.pathname, copy)); return res; })
+      .catch(() => caches.match(url.pathname)));
+  }
+});
+
+self.addEventListener("push", e => {
+  const data = e.data ? e.data.json() : {};
+  e.waitUntil(self.registration.showNotification(data.title || "Góc Nhỏ", {
+    body: data.body, icon: "/icons/icon-192.png", badge: "/icons/badge-96.png",
+    tag: data.tag, data: {url: data.url || "/choi/"},
+  }));
+});
+
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  e.waitUntil(clients.openWindow(e.notification.data.url));
+});
+```
+
+<Callout type="warning" title="Đừng để service worker nuốt kết nối realtime">
+Site của mình có phòng vẽ chung dùng Server-Sent Events ở `/api/rooms/...`. Nếu service worker `respondWith` cả những request đó, stream sẽ bị cache hoặc treo. Quy tắc an toàn: **chỉ xử lý những gì bạn chắc chắn muốn cache**, còn lại `return` để trình duyệt tự đi mạng.
+</Callout>
+
+## Web Push hoạt động thế nào
+
+Server **không thể** tự kết nối tới điện thoại: máy đổi mạng liên tục, nằm sau NAT và tường lửa. Mọi thông báo đều đi nhờ qua **dịch vụ push của hãng trình duyệt** (Google FCM, Apple Push, Mozilla autopush), nơi đã giữ sẵn một kết nối thường trực với từng máy.
+
+<Figure caption="Bước 1 lấy địa chỉ nhận tin của máy; bước 2 server mã hoá, ký tên rồi nhờ dịch vụ push chuyển tới.">
+  <WebPushFlow />
+</Figure>
+
+1. **Đăng ký.** Trang gọi `pushManager.subscribe()` kèm **khoá công khai VAPID** của server. Trình duyệt hỏi dịch vụ push và nhận về một **subscription** gồm:
+   - `endpoint`: URL riêng của máy, ví dụ `https://fcm.googleapis.com/fcm/send/…` hoặc `https://web.push.apple.com/…`.
+   - `keys.p256dh`: khoá công khai ECDH P-256 do **chính trình duyệt** tạo.
+   - `keys.auth`: 16 byte bí mật dùng chung.
+
+   Trang gửi cả cục này về server để lưu lại.
+2. **Gửi.** Server **mã hoá** nội dung bằng khoá của máy (RFC 8291), **ký** một JWT bằng khoá VAPID riêng (RFC 8292), rồi `POST` lên `endpoint`. Dịch vụ push chuyển gói tin tới máy, **nhưng không đọc được nội dung**.
+3. **Nhận.** Hệ điều hành đánh thức service worker. Trình duyệt giải mã, phát sự kiện `push`, và trang gọi `showNotification()`.
+
+Phía client:
+
+```js
+const reg = await navigator.serviceWorker.ready;
+const {publicKey} = await (await fetch("/api/push/key")).json();
+const sub = await reg.pushManager.subscribe({
+  userVisibleOnly: true,                      // bắt buộc: mỗi push phải hiện thông báo
+  applicationServerKey: base64UrlToBytes(publicKey),
+});
+await fetch("/api/push/subscribe", {method: "POST", body: JSON.stringify({sub: sub.toJSON()})});
+```
+
+## Thực hành 3: tự mã hoá Web Push bằng Python thuần
+
+Bình thường bạn sẽ `pip install pywebpush` hoặc `npm i web-push`. Server của mình là WSL không có quyền sudo, không có pip, không có Node, chỉ có gói `cryptography` của Ubuntu. Hoá ra tự viết cũng không dài, và đọc chuẩn thì hiểu rõ hơn hẳn.
+
+### Ký VAPID (RFC 8292)
+
+VAPID là một JWT ký bằng **ES256** (ECDSA P-256 + SHA-256). `aud` là origin của endpoint, `sub` là liên hệ của bạn (URL hoặc `mailto:`).
+
+```python
+def vapid_header(endpoint):
+    u = urlparse(endpoint)
+    seg = lambda o: b64u(json.dumps(o, separators=(",", ":")).encode())
+    unsigned = seg({"typ": "JWT", "alg": "ES256"}) + "." + seg({
+        "aud": f"{u.scheme}://{u.netloc}",
+        "exp": int(time.time()) + 12 * 3600,          # tối đa 24 giờ
+        "sub": "https://example.com",
+    })
+    der = VAPID_KEY.sign(unsigned.encode(), ec.ECDSA(hashes.SHA256()))
+    r, s = decode_dss_signature(der)                   # JWT cần r||s 64 byte, không phải DER
+    sig = b64u(r.to_bytes(32, "big") + s.to_bytes(32, "big"))
+    return f"vapid t={unsigned}.{sig}, k={PUBLIC_KEY_B64U}"
+```
+
+<Callout type="warning" title="Chữ ký DER và chữ ký JWT khác nhau">
+`cryptography` trả chữ ký ECDSA dạng **DER** (một cấu trúc ASN.1). JWT ES256 lại cần **64 byte thô** `r||s`. Quên bước `decode_dss_signature` thì dịch vụ push sẽ từ chối chữ ký.
+</Callout>
+
+### Mã hoá nội dung (RFC 8291, aes128gcm)
+
+Ý tưởng: server sinh một **cặp khoá ECDH dùng một lần**, trao đổi khoá với `p256dh` của máy để có bí mật chung, trộn với `auth` qua HKDF, rồi mã hoá bằng AES-128-GCM.
+
+```python
+def encrypt(sub, payload: bytes) -> bytes:
+    ua_pub = unb64u(sub["keys"]["p256dh"])                 # 65 byte, khoá của trình duyệt
+    auth   = unb64u(sub["keys"]["auth"])                   # 16 byte bí mật chung
+
+    eph = ec.generate_private_key(ec.SECP256R1())          # khoá dùng một lần của server
+    as_pub = eph.public_key().public_bytes(X962, UNCOMPRESSED)
+    shared = eph.exchange(ec.ECDH(),
+                          ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), ua_pub))
+
+    ikm   = HKDF(hashes.SHA256(), 32, auth, b"WebPush: info\x00" + ua_pub + as_pub).derive(shared)
+    salt  = os.urandom(16)
+    cek   = HKDF(hashes.SHA256(), 16, salt, b"Content-Encoding: aes128gcm\x00").derive(ikm)
+    nonce = HKDF(hashes.SHA256(), 12, salt, b"Content-Encoding: nonce\x00").derive(ikm)
+
+    body = AESGCM(cek).encrypt(nonce, payload + b"\x02", None)   # \x02 = bản ghi cuối, không padding
+    # header: salt(16) | record size(4) | độ dài keyid(1) | keyid = khoá công khai của server
+    return salt + (4096).to_bytes(4, "big") + bytes([len(as_pub)]) + as_pub + body
+```
+
+Gửi đi:
+
+```python
+req = urllib.request.Request(sub["endpoint"], data=encrypt(sub, json.dumps(data).encode()),
+    method="POST", headers={
+        "Authorization": vapid_header(sub["endpoint"]),
+        "Content-Encoding": "aes128gcm",
+        "TTL": "86400",          # dịch vụ push giữ tin tối đa 1 ngày nếu máy đang tắt
+        "Urgency": "high",       # Android giao ngay, không gom lại khi tiết kiệm pin
+    })
+urllib.request.urlopen(req)      # 201 Created = dịch vụ push đã nhận
+```
+
+Nếu nhận `404` hoặc `410`, nghĩa là người dùng đã gỡ app hoặc tắt thông báo. Xoá subscription đó đi.
+
+### Kiểm tra mà không cần điện thoại
+
+Trước khi bấm thử trên máy thật, mình viết một bài test **đóng vai trình duyệt**:
+
+- Tạo cặp khoá giả cho "máy", gọi `encrypt()`, rồi tự giải mã ngược theo đúng RFC và so nội dung.
+- Kiểm tra chữ ký VAPID bằng khoá công khai.
+
+Cả hai qua thì phần mật mã đã đúng chuẩn, lỗi nếu có chỉ còn nằm ở header hay địa chỉ gửi. Bước này đáng làm, vì dịch vụ push trả lỗi rất kiệm lời.
+
+## Hẹn giờ: chào buổi sáng có thời tiết thật
+
+Một thread nhỏ trong server kiểm tra giờ Việt Nam mỗi 30 giây:
+
+- **7:00**: gọi [Open-Meteo](https://open-meteo.com) (miễn phí, không cần key) lấy nhiệt độ và xác suất mưa. Mưa trên 50% thì nhắc "nhớ mang ô ☔".
+- **22:30**: nhắc đi ngủ.
+
+Hai điểm nhỏ để chạy ổn định:
+
+- **Chỉ gửi trong cửa sổ 10 phút** sau giờ hẹn. Server khởi động lại lúc 9h sẽ không bắn lời chào buổi sáng muộn.
+- **Ghi ngày đã gửi** ra file (`{"morning": "2026-10-12"}`), để restart giữa chừng không gửi trùng.
+
+## Những cái hố mình đã rơi vào
+
+<Callout type="warning" title="iPhone: phải cài trước, rồi mới bật được thông báo">
+Trong Safari thường, `PushManager` không tồn tại. Người dùng phải "Thêm vào MH chính", mở app từ icon, rồi mới xin quyền được. Hãy phát hiện trường hợp này (`navigator.standalone`, `display-mode: standalone`) và hướng dẫn rõ ràng, đừng để nút "Bật thông báo" im lặng không làm gì.
+</Callout>
+
+<Callout type="warning" title="App cài rồi không có nút Back">
+Ở chế độ `standalone` không còn thanh địa chỉ và nút quay lại của trình duyệt. Trang con nào cũng cần một đường về. Mình chèn một nút ⌂ nhỏ, chỉ hiện khi `matchMedia("(display-mode: standalone)").matches`.
+</Callout>
+
+<Callout type="warning" title="Một import làm sập cả site">
+`cryptography` của Ubuntu 22.04 được build cho **Python 3.10**, còn `python3` trên máy đã trỏ sang 3.12. Kết quả: `ModuleNotFoundError: _cffi_backend` khi import, service crash liên tục, Cloudflare trả **502** cho toàn bộ site. Cách sửa:
+- Chạy service bằng đúng `/usr/bin/python3.10`.
+- Bọc `import webpush` trong `try/except`, để nếu phần push hỏng thì chỉ push tắt, các trang tĩnh vẫn sống.
+</Callout>
+
+<Callout type="tip" title="Header cache cho sw.js và manifest">
+Server tĩnh của mình cache file tĩnh 1 ngày. Riêng `sw.js` và `manifest.webmanifest` nên trả `Cache-Control: no-cache` để bản cập nhật tới người dùng ngay. Manifest cũng nên có `Content-Type: application/manifest+json`. Khi đổi nội dung cần cache, **đổi tên cache** (`goc-nho-v2`) để bước `activate` dọn bản cũ.
+</Callout>
+
+<Callout type="tip" title="Thông báo đến chậm?">
+Push đi qua hạ tầng của Google hoặc Apple nên thường mất vài giây, có lúc lâu hơn khi máy đang ngủ sâu. `Urgency: high` giúp Android giao sớm hơn. Còn lại thì nằm ngoài tầm tay bạn, nên đừng hứa "tức thì" trong UI.
+</Callout>
+
+## Tóm lại
+
+- **Cài được** nhờ **manifest**. **Offline và nhận push khi app đóng** nhờ **service worker**. Cả hai cần **HTTPS**.
+- **Push không đi thẳng** từ server tới máy mà qua dịch vụ push của hãng. Nội dung được **mã hoá đầu-cuối** (RFC 8291), server tự xưng danh bằng **chữ ký VAPID** (RFC 8292).
+- Không có thư viện cũng làm được: một hàm ký JWT ES256 và một hàm HKDF + AES-GCM, tổng chưa tới 50 dòng Python. Viết thêm một test tự giải mã để chắc chắn trước khi đụng tới điện thoại thật.
+
+Tài liệu nên đọc: [RFC 8291 – Message Encryption for Web Push](https://www.rfc-editor.org/rfc/rfc8291), [RFC 8292 – VAPID](https://www.rfc-editor.org/rfc/rfc8292), và [web.dev/learn/pwa](https://web.dev/learn/pwa).

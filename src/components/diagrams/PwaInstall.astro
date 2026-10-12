@@ -1,0 +1,45 @@
+<svg viewBox="0 0 720 300" role="img" aria-label="Ba mảnh ghép của PWA: manifest, service worker và HTTPS; trình duyệt dùng chúng để cài app trên Android (WebAPK) và iPhone (web app trên màn hình chính)">
+  <defs>
+    <marker id="pwa-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="head-accent"></path>
+    </marker>
+  </defs>
+
+  <!-- The three pieces -->
+  <rect x="16" y="24" width="300" height="252" rx="16" class="box-ghost"></rect>
+  <text x="32" y="48" class="s mono fill-accent">trang web của bạn</text>
+
+  <rect x="36" y="64" width="260" height="58" rx="10" class="box-accent"></rect>
+  <text x="166" y="88" text-anchor="middle" class="t mono">manifest.webmanifest</text>
+  <text x="166" y="107" text-anchor="middle" class="s">tên, icon, màu, display: standalone</text>
+
+  <rect x="36" y="136" width="260" height="58" rx="10" class="box-info"></rect>
+  <text x="166" y="160" text-anchor="middle" class="t mono">sw.js · service worker</text>
+  <text x="166" y="179" text-anchor="middle" class="s">chạy ngầm: cache offline, nhận push</text>
+
+  <rect x="36" y="208" width="260" height="50" rx="10" class="box"></rect>
+  <text x="166" y="230" text-anchor="middle" class="t">HTTPS</text>
+  <text x="166" y="247" text-anchor="middle" class="s">bắt buộc cho service worker</text>
+
+  <!-- Browser decides -->
+  <rect x="352" y="118" width="120" height="64" rx="12" class="box-alt"></rect>
+  <text x="412" y="144" text-anchor="middle" class="t">Trình duyệt</text>
+  <text x="412" y="163" text-anchor="middle" class="s">"cài được"</text>
+  <line x1="316" y1="150" x2="350" y2="150" class="edge-accent flow" marker-end="url(#pwa-arrow)"></line>
+
+  <!-- Android -->
+  <rect x="508" y="48" width="196" height="88" rx="12" class="box-info"></rect>
+  <text x="606" y="74" text-anchor="middle" class="t">Android · Chrome</text>
+  <text x="606" y="95" text-anchor="middle" class="s">Google đóng gói WebAPK</text>
+  <text x="606" y="114" text-anchor="middle" class="s">hiện trong danh sách app</text>
+  <line x1="472" y1="138" x2="506" y2="96" class="edge-accent flow" marker-end="url(#pwa-arrow)"></line>
+
+  <!-- iOS -->
+  <rect x="508" y="164" width="196" height="88" rx="12" class="box"></rect>
+  <text x="606" y="190" text-anchor="middle" class="t">iPhone · Safari</text>
+  <text x="606" y="211" text-anchor="middle" class="s">"Thêm vào MH chính"</text>
+  <text x="606" y="230" text-anchor="middle" class="s">push từ iOS 16.4, phải cài</text>
+  <line x1="472" y1="162" x2="506" y2="204" class="edge-accent flow" marker-end="url(#pwa-arrow)"></line>
+
+  <text x="360" y="292" text-anchor="middle" class="s">Mở app = trình duyệt chạy đúng trang web đó, nhưng toàn màn hình và không có thanh địa chỉ</text>
+</svg>

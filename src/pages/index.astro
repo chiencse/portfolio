@@ -4,11 +4,13 @@ import Base from '@/layouts/Base.astro';
 import Icon from '@/components/Icon.astro';
 import SectionHeading from '@/components/SectionHeading.astro';
 import PostCard from '@/components/PostCard.astro';
+import ProjectCard from '@/components/ProjectCard.astro';
 import avatar from '@/assets/images/avatar.jpg';
 import { profile, facts, experiences, projects, publications, authorName, skills } from '@/data/site';
 import { getPosts, url } from '@/lib/utils';
 
 const latestPosts = (await getPosts()).slice(0, 3);
+const [featuredProject, ...otherProjects] = projects;
 const typedWords = ['backend systems', 'REST APIs', 'LLM pipelines', 'internal platforms', 'web apps'];
 const marqueeItems = [...new Set(skills.flatMap((g) => g.items))];
 ---
@@ -169,104 +171,42 @@ const marqueeItems = [...new Set(skills.flatMap((g) => g.items))];
   <!-- Projects -->
   <section id="projects" class="container-page scroll-mt-20 py-16 sm:py-24">
     <SectionHeading index="03" label="Projects" title="Things I've built." />
-    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {
-        projects.map((project, i) => {
-          const featured = i === 0;
-          return (
-            <div
-              class:list={[featured && 'md:col-span-2 lg:col-span-3']}
-              data-reveal
-              style={`--reveal-delay:${featured ? 0 : ((i - 1) % 3) * 100}ms`}
-            >
-              <article
-                class:list={['card group flex h-full flex-col overflow-hidden', featured && 'md:grid md:grid-cols-[1.1fr_1fr]']}
-                data-tilt
-              >
-                <div
-                  class:list={[
-                    'relative aspect-[16/9] overflow-hidden border-b border-line bg-surface-2',
-                    featured && 'md:aspect-auto md:min-h-80 md:border-r md:border-b-0',
-                  ]}
-                >
-                  {project.image ? (
-                    <Image
-                      src={project.image}
-                      alt={`Screenshot of ${project.name}`}
-                      widths={[480, 720, 960, 1280]}
-                      sizes={featured ? '(min-width: 768px) 520px, 100vw' : '(min-width: 1024px) 320px, (min-width: 768px) 360px, 100vw'}
-                      class="absolute inset-0 size-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.05]"
-                    />
-                  ) : (
-                    <div class="absolute inset-0 grid place-items-center bg-[radial-gradient(var(--line)_1px,transparent_1px)] [background-size:16px_16px] p-5 sm:p-8">
-                      <div class="absolute -top-10 -right-10 size-48 rounded-full bg-accent-2/25 blur-3xl" />
-                      <div class="absolute -bottom-12 left-6 size-40 rounded-full bg-accent/25 blur-3xl" />
-                      <div class="relative w-full max-w-md overflow-hidden rounded-xl border border-line bg-bg/80 shadow-2xl shadow-black/20 backdrop-blur transition-transform duration-500 group-hover:-translate-y-1">
-                        <div class="flex items-center gap-1.5 border-b border-line px-3 py-2">
-                          <span class="size-2.5 rounded-full bg-[#ff5f57]" />
-                          <span class="size-2.5 rounded-full bg-[#febc2e]" />
-                          <span class="size-2.5 rounded-full bg-[#28c840]" />
-                          <span class="ml-2 font-mono text-[0.7rem] text-muted">{project.name.toLowerCase().replace(/\s+/g, '-')}</span>
-                        </div>
-                        <div class="space-y-1.5 p-4 font-mono text-[0.8rem] leading-relaxed sm:text-sm">
-                          {project.terminal?.map((line, n) => (
-                            <p class:list={['text-pretty', n === 0 ? 'text-muted' : 'text-accent']}>
-                              <span class="text-accent-2 select-none">{n === 0 ? '› ' : '  '}</span>
-                              {line}
-                            </p>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-bg/40 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-                </div>
-                <div class="flex flex-1 flex-col p-6 sm:p-7">
-                  {project.kind && <p class="eyebrow mb-2">{project.kind}</p>}
-                  <h3 class="text-xl font-semibold tracking-tight">{project.name}</h3>
-                  <p class="mt-3 text-muted text-pretty">{project.description}</p>
-                  {project.contributions && (
-                    <div class="mt-4">
-                      <p class="font-mono text-[0.7rem] tracking-wider text-muted uppercase">My part</p>
-                      <ul class="mt-2 space-y-2 text-[0.95rem]">
-                        {project.contributions.map((c) => (
-                          <li class="relative pl-5 text-pretty before:absolute before:top-[0.7em] before:left-0 before:h-px before:w-2.5 before:bg-accent">
-                            {c}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  <div class="flex-1" />
-                  <ul class="mt-5 flex flex-wrap gap-1.5" aria-label="Tech stack">
-                    {project.tags.map((tag) => (
-                      <li class="chip">{tag}</li>
-                    ))}
-                  </ul>
-                  <div class="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium">
-                    {project.repo && (
-                      <a href={project.repo} class="inline-flex items-center gap-1.5 transition-colors hover:text-accent">
-                        <Icon name="github" size={16} /> Source
-                      </a>
-                    )}
-                    {project.demo && (
-                      <a href={project.demo} class="inline-flex items-center gap-1.5 transition-colors hover:text-accent">
-                        Live demo <Icon name="arrow-up-right" size={15} />
-                      </a>
-                    )}
-                    {project.links?.map((link) => (
-                      <a href={link.href} class="inline-flex items-center gap-1.5 transition-colors hover:text-accent">
-                        {link.label} <Icon name="arrow-up-right" size={15} />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              </article>
-            </div>
-          );
-        })
-      }
+    <div data-reveal>
+      <ProjectCard project={featuredProject} featured />
     </div>
+
+    {
+      otherProjects.length > 0 && (
+        <div class="mt-6">
+          <div class="flex justify-center" data-reveal>
+            <button
+              type="button"
+              class="btn-ghost"
+              aria-expanded="false"
+              aria-controls="more-projects"
+              data-projects-toggle
+            >
+              <span data-when="closed">Show {otherProjects.length} more projects</span>
+              <span data-when="open" hidden>
+                Hide projects
+              </span>
+              <Icon name="chevron-down" size={16} class="transition-transform duration-300 [[aria-expanded=true]>&]:rotate-180" />
+            </button>
+          </div>
+          <div id="more-projects" class="collapse-panel" data-open="false" inert>
+            <div class="-mx-2 px-2">
+              <div class="grid gap-6 pt-6 pb-2 md:grid-cols-2 lg:grid-cols-3">
+                {otherProjects.map((project, i) => (
+                  <div data-reveal style={`--reveal-delay:${(i % 3) * 100}ms`}>
+                    <ProjectCard project={project} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
     <p class="mt-8 text-sm text-muted" data-reveal>
       More on <a href={profile.github} class="link text-ink">github.com/{profile.handle}</a>.
     </p>
@@ -422,6 +362,18 @@ const marqueeItems = [...new Set(skills.flatMap((g) => g.items))];
         done?.classList.replace('inline-flex', 'hidden');
       }, 1800);
     });
+  });
+
+  // Show / hide the secondary projects.
+  const toggle = document.querySelector<HTMLButtonElement>('[data-projects-toggle]');
+  const panel = document.getElementById('more-projects');
+  toggle?.addEventListener('click', () => {
+    const open = toggle.getAttribute('aria-expanded') !== 'true';
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.querySelector('[data-when="closed"]')?.toggleAttribute('hidden', open);
+    toggle.querySelector('[data-when="open"]')?.toggleAttribute('hidden', !open);
+    panel?.setAttribute('data-open', String(open));
+    panel?.toggleAttribute('inert', !open);
   });
 
   // Typewriter for the hero "~$ building …" line.

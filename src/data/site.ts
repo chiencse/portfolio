@@ -30,6 +30,7 @@ export const facts: { label: string; value: string }[] = [
   { label: 'Currently', value: 'Software Engineer @ VNG' },
   { label: 'University', value: 'HCMUT — Computer Science' },
   { label: 'GPA', value: '3.6 / 4.0' },
+  { label: 'Thesis', value: '10 / 10 at defense' },
   { label: 'Focus', value: 'Backend · System design' },
   { label: 'Based in', value: 'Ho Chi Minh City' },
 ];
@@ -55,8 +56,25 @@ export const experiences: Experience[] = [
     company: 'VNG',
     period: 'Jun 2026 — Present',
     current: true,
-    summary: 'Building internal platforms at VNG.',
-    products: ['Operation Tool', 'AI Composer', 'Portal Service'],
+    summary: 'Building internal platforms and the systems that run in-game campaigns.',
+    products: ['AI Composer', 'Operation Tool', 'Portal Service', 'Game campaign system'],
+    stack: ['Go', 'Kafka'],
+    highlights: [
+      'Build AI Composer and the Operation Tool used by internal teams.',
+      'Develop the backend of the system that runs game campaigns, in Go with Kafka.',
+    ],
+  },
+  {
+    role: 'Product Backend Developer',
+    company: 'Geek Up',
+    logo: geekup,
+    period: 'Apr 2026 — Jun 2026',
+    summary: 'Joined full-time after the internship to build an event management system.',
+    highlights: [
+      'Owned the database design and the API specifications.',
+      'Worked directly with stakeholders to turn requirements into features.',
+      "Deployed and ran the system inside the partner's own network.",
+    ],
   },
   {
     role: 'Product Backend Intern',
@@ -91,6 +109,8 @@ export const experiences: Experience[] = [
 
 export type Project = {
   name: string;
+  /** Highlighted badge on the card, e.g. a grade or award. */
+  award?: string;
   /** Small label above the name, e.g. "Bachelor's thesis". */
   kind?: string;
   description: string;
@@ -110,6 +130,7 @@ export const projects: Project[] = [
   {
     name: 'EduRPA',
     kind: "Bachelor's thesis · HCMUT",
+    award: 'Defended with 10/10',
     description:
       'An open-source Robotic Process Automation platform built for the education sector: design automation workflows as BPMN, then run them as robots against everyday tools.',
     contributions: [

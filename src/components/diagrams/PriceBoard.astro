@@ -11,7 +11,7 @@ const rows: Cell[][] = [
   [['BBB', 'fill-floor'], ['8.00', 'fill-ref'], ['8.56', 'fill-ceil'], ['7.44', 'fill-floor'], ['—'], ['—'], ['—'], ['—'], ['7.44', 'fill-floor'], ['−0.56', 'fill-floor'], ['7.44', 'fill-floor'], ['1,250,000']],
   [['CCC', 'fill-ceil'], ['30.00', 'fill-ref'], ['32.10', 'fill-ceil'], ['27.90', 'fill-floor'], ['32.05', 'fill-up'], ['12,000'], ['32.10', 'fill-ceil'], ['486,000'], ['32.10', 'fill-ceil'], ['+2.10', 'fill-ceil'], ['—'], ['—']],
 ];
-const xs = cols.reduce<number[]>((acc, c, i) => [...acc, i === 0 ? 12 : acc[i - 1] + cols[i - 1].w], []);
+const xs = cols.reduce<number[]>((acc, _c, i) => [...acc, i === 0 ? 12 : acc[i - 1] + cols[i - 1].w], []);
 ---
 
 <svg viewBox="0 0 720 268" role="img" aria-label="Bảng giá mô phỏng với giá tham chiếu, trần, sàn, dư mua, dư bán và giá khớp">

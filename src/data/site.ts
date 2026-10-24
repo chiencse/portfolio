@@ -16,8 +16,8 @@ export const profile = {
   intro:
     'I design and build backend systems that stay fast, secure and easy to change — and the web apps that sit on top of them.',
   about: [
-    'I am a Software Engineer at VNG, specialising in backend system design and optimisation, with a Computer Science foundation from Ho Chi Minh City University of Technology (HCMUT).',
-    'Most of my work lives on the server: modelling the domain, shaping APIs, picking the right storage, and keeping services observable once they are in production. I lean on Clean Architecture, Domain-Driven Design and Hexagonal Architecture to keep codebases readable as they grow.',
+    'I am a Software Engineer at VNG and an Excellent-class graduate in Computer Science from Ho Chi Minh City University of Technology (HCMUT). I build backend systems and bring AI into real products.',
+    'On the backend side, that means modelling the domain, shaping APIs, choosing the right storage and keeping services observable in production, with Clean Architecture and DDD to keep codebases easy to change. On the AI side, it means turning models into dependable features: LLM pipelines, retrieval (RAG) and the tooling and evaluation that make them trustworthy.',
   ],
   location: 'Ho Chi Minh City, Vietnam',
   email: 'minhchien662004@gmail.com',
@@ -28,10 +28,10 @@ export const profile = {
 
 export const facts: { label: string; value: string }[] = [
   { label: 'Currently', value: 'Software Engineer @ VNG' },
-  { label: 'University', value: 'HCMUT — Computer Science' },
+  { label: 'Degree', value: 'CS · HCMUT · Excellent' },
   { label: 'GPA', value: '3.6 / 4.0' },
   { label: 'Thesis', value: '10 / 10 at defense' },
-  { label: 'Focus', value: 'Backend · System design' },
+  { label: 'Focus', value: 'Backend · AI integration' },
   { label: 'Based in', value: 'Ho Chi Minh City' },
 ];
 

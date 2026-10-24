@@ -128,11 +128,11 @@ export type Project = {
 // The first project is shown as the large featured card.
 export const projects: Project[] = [
   {
-    name: 'EduRPA',
+    name: 'ERP_RPA',
     kind: "Bachelor's thesis · HCMUT",
     award: 'Defended with 10/10',
     description:
-      'An open-source Robotic Process Automation platform built for the education sector: design automation workflows as BPMN, then run them as robots against everyday tools.',
+      'A Robotic Process Automation platform for ERP business processes, including SAP: design automation workflows as BPMN, then run them as robots.',
     contributions: [
       'Built the text-to-BPMN pipeline that turns a plain-language process description into a BPMN flow, using LangGraph, entity extraction, hybrid retrieval (BM25 + embeddings over ChromaDB) and Gemini.',
       'Contributed to the NestJS backend, the Next.js workflow designer and the serverless robot runtime.',
